@@ -16,8 +16,33 @@ Ubuntu container, the same setup as the CI runner.
 | Firmware assets downloaded from the release | **Pass**: `klipper.bin`, `klipper.dict` and `klipper.config.full` match the published `SHA256SUMS`; the `klipper.bin` SHA-256 `7cf49e4cdca3a6a7d49dd1e7a6e6377922dee88476e6b7f8c63ad07c8aecfe69` is identical to the local builds |
 | `ghcr.io/wendelnascimento/klipper-haos:0.1.1` pulled anonymously | **Pass**. Image label `io.hass.version` is `0.1.1` |
 
-Not covered: installing v0.1.1 on Home Assistant OS, including the update
-from v0.1.0, and anything that needs the printer.
+Not covered by the release run: anything that needs the printer.
+
+## Update from v0.1.0 to v0.1.1 on real Home Assistant OS — 2026-11-11
+
+Environment: the same host as the v0.1.0 run below (HAOS 18.2, Supervisor
+2026.10.5, Core 2026.7.4), **no printer connected**, `serial_device` empty.
+The update was started through the Supervisor API with "back up before
+updating" turned on, the same call the UI makes. Before the update, a small
+marker G-code file was uploaded through ingress. It was deleted afterwards.
+
+| Check | Result |
+|---|---|
+| Store reload offers 0.1.1 | **Pass**. The "Invalid app config" warning for `klipper/mainsail/config.json` no longer appears |
+| Update with backup first | **Pass** in 19 s: partial backup, image pull (8 s), stop (4 s), start of 0.1.1. The Supervisor removed the 0.1.0 image afterwards |
+| Pre-update backup contents (backup downloaded and listed) | **Pass**: 0.3 MB. Contains the pre-backup database snapshot written by the hook (`backup/database/klipper-haos-pre-backup.db`), the live database, the marker file and the full app config folder. Logs are excluded |
+| Data kept across the update | **Pass**: the 12 config files (sizes and modification times) and the marker file are unchanged, and the same 5 Moonraker database namespaces exist |
+| Options and security settings after the update | **Pass**: unchanged (not privileged, no full access, no host network, AppArmor default, protection mode on, direct port unmapped, auto update off) |
+| App start after the update | **Pass**: the log reports `app=0.1.1`; Klipper reports the missing serial device as expected |
+| Real ingress, 11 checks (same as the v0.1.0 run) | **Pass**: 11/11, including WebSocket (101) and the 24 MiB upload in 2 s |
+| Idle resource use | **55.5 MiB** RAM, about **0.2 %** CPU (one sample) |
+
+The pre-backup hook's own log line is not in the app log: the Supervisor
+runs the hook with `docker exec`, so its output does not reach the
+container log. The snapshot file in the backup shows that it ran.
+
+Not covered: restoring from the backup, rolling back to 0.1.0, the
+watchdog, and anything that needs the printer.
 
 ## v0.1.0 on real Home Assistant OS — 2026-11-11
 
@@ -130,7 +155,7 @@ listed the seeded files. See the screenshot in the README.
 |---|---|---|
 | Mainsail panel in a browser inside the Home Assistant frontend (including remote access) | Real ingress was tested by script only (see the 2026-11-11 run) | v0.3.0 |
 | Printer serial connection, USB re-plug | Needs the printer (`uart` and by-id were confirmed on HAOS) | v0.2.0 |
-| HA backup → restore cycle, app update and rollback | Needs HAOS | v0.3.0 |
+| Restore from a Home Assistant backup, rollback to an older app version | Not run yet (update and backup creation were tested, see the update run) | v0.3.0 |
 | Client IP preservation on the published port (`trusted_networks`) | Depends on the HAOS Docker configuration | v0.3.0 |
 | Supervisor watchdog restarting an unhealthy app | Needs HAOS | v0.3.0 |
 | Resource usage on the target Celeron host, idle and printing | Needs the target hardware | v0.2.0 |

@@ -53,7 +53,8 @@ configured yet.*
 | Ender 3 V3 SE profile: syntax and pins against the compiled MCU dictionary | **Tested** (Klipper batch mode) |
 | Installation from the app store on real Home Assistant OS | **Tested** (HAOS 18.2, no printer connected) |
 | Ingress through the real Supervisor: UI, API, WebSocket, 24 MiB upload | **Tested** (scripted; browser view in the HA frontend not yet checked) |
-| Home Assistant backup and restore, app updates | **Not yet tested** |
+| App update (0.1.0 → 0.1.1) with pre-update backup; data kept | **Tested** (HAOS 18.2, no printer connected) |
+| Restore from a Home Assistant backup, rollback | **Not yet tested** |
 | USB serial connection to a real printer | **Not yet tested** |
 | Ender 3 V3 SE on real hardware (motion, heaters, probe, printing) | **Not yet tested** |
 | aarch64 (Raspberry Pi, ODROID, Green, Yellow) | **Planned** |

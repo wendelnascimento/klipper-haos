@@ -44,6 +44,9 @@ and `*.tmp` files.
 ## Verified so far
 
 The pre-backup hook and the database snapshot are tested automatically
-(`tests/integration/run.sh`). A full Home Assistant backup → restore cycle on
-a real HAOS installation has **not been tested yet**. It is part of the
-v0.3.0 milestone.
+(`tests/integration/run.sh`). On real Home Assistant OS, the backup made
+before the update from 0.1.0 to 0.1.1 was checked: it contains the hook's
+database snapshot, the live database, the G-code files and the app config
+folder, and leaves out the logs (see the [test report](test-report.md)).
+**Restoring** from a backup on real HAOS has **not been tested yet**. It is
+part of the v0.3.0 milestone.

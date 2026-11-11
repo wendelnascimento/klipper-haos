@@ -23,9 +23,10 @@ are checked only when they are done **and** verified as described.
 ## v0.3.0 — Integration and reliability
 
 - [ ] Ingress through the real Home Assistant frontend (local and remote access)
-- [ ] Large uploads through real ingress
-- [ ] Home Assistant backup → restore cycle verified
-- [ ] App update and rollback verified; data persists
+- [x] Large uploads through real ingress
+- [ ] Home Assistant backup → restore cycle verified (backup contents checked)
+- [ ] App update and rollback verified; data persists (update 0.1.0 → 0.1.1
+  verified with data kept; rollback pending)
 - [ ] Client IP preservation on the published port (for `trusted_networks`)
 - [ ] Custom AppArmor profile (complain-mode audit on real HAOS)
 - [ ] Optional non-root service user
