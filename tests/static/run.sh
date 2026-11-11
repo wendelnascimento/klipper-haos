@@ -49,6 +49,22 @@ else
     failed=1
 fi
 
+step "Supervisor store layout"
+# The Supervisor reads every config.{json,yaml,yml} in the repository as an
+# app manifest and logs a warning for each one that is not. It skips hidden
+# directories (so .github/ISSUE_TEMPLATE/config.yml is fine). Only the real
+# manifest may use that name.
+stray="$(cd "${ROOT}" && find . -path './.*' -prune -o -type f \
+    \( -name config.json -o -name config.yaml -o -name config.yml \) -print \
+    | grep -v '^\./klipper/config\.yaml$' || true)"
+if [[ -z "${stray}" ]]; then
+    echo "Only klipper/config.yaml is named like an app manifest"
+else
+    echo "Files the Supervisor would read as app manifests:"
+    echo "${stray}"
+    failed=1
+fi
+
 echo
 if (( failed )); then echo "Static validation FAILED"; else echo "Static validation passed"; fi
 exit ${failed}

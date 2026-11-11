@@ -48,7 +48,7 @@ RUN VUE_APP_PATH=/__KHAOS_BASE__ npx vite build --base=/__KHAOS_BASE__/ \
     && grep -rq "__KHAOS_BASE__" dist \
     && rm -f dist/*.zip
 
-COPY mainsail/config.json dist/config.json
+COPY mainsail/mainsail-settings.json dist/config.json
 
 ###############################################################################
 # Stage 2: Klipper + Moonraker Python environments

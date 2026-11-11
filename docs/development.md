@@ -9,7 +9,7 @@ klipper-haos/
 │   ├── config.yaml              app manifest (options, ports, ingress, backup)
 │   ├── Dockerfile               3-stage build; all upstream pins live here
 │   ├── requirements/            exact Python constraints + security overrides
-│   ├── mainsail/config.json     Mainsail runtime config
+│   ├── mainsail/mainsail-settings.json  Mainsail runtime config (served as /config.json)
 │   ├── rootfs/                  copied into the image
 │   │   ├── etc/s6-overlay/      s6-rc services + user bundle
 │   │   ├── etc/nginx/           ingress + direct port servers
