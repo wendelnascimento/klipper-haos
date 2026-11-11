@@ -4,14 +4,24 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.1] - 2026-11-11
+
+Installed and run on a real Home Assistant OS host for the first time (no
+printer connected). Still not validated with printer hardware.
 
 ### Fixed
 
 - The Supervisor no longer logs an "Invalid app config" warning when it
   scans the repository (the Mainsail settings file was named `config.json`).
 - The release workflow now builds the firmware assets (the firmware build
-  script failed on a relative output directory).
+  script failed on a relative output directory). v0.1.0 has no GitHub
+  release; this is the first one with firmware assets.
+
+### Changed
+
+- The documentation and test report now include the results of the first
+  run on real Home Assistant OS, including ingress through the real
+  Supervisor.
 
 ## [0.1.0] - 2026-11-11
 

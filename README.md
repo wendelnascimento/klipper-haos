@@ -8,7 +8,7 @@ no Raspberry Pi, no second operating system, no virtual machine and no
 unmanaged Docker containers. The Home Assistant Supervisor installs,
 updates, backs up and supervises it like any other app.
 
-> **Status: experimental (v0.1.0).** The app is tested automatically in
+> **Status: experimental (v0.1.1).** The app is tested automatically in
 > containers and has been installed and run on a real Home Assistant OS
 > host, but it has **not yet been validated with real printer hardware**. Read
 > [Known limitations](#known-limitations) before using it with a printer.
