@@ -6,8 +6,8 @@ slug: klipper
 description: >-
   Klipper, Moonraker and Mainsail running on Home Assistant OS.
   Turns your Home Assistant host into a 3D printer host.
-url: https://github.com/OWNER/klipper-haos/tree/main/klipper
-image: ghcr.io/OWNER/klipper-haos
+url: https://github.com/wendelnascimento/klipper-haos/tree/main/klipper
+image: ghcr.io/wendelnascimento/klipper-haos
 arch:
   - amd64
 stage: experimental

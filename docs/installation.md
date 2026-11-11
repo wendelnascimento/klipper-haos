@@ -14,7 +14,7 @@
 1. **Settings → Apps → App store** (older versions: *Add-ons → Add-on
    store*).
 2. Menu (⋮) → **Repositories** → add
-   `https://github.com/OWNER/klipper-haos` → **Add**.
+   `https://github.com/wendelnascimento/klipper-haos` → **Add**.
 3. Find **Klipper** in the store and click **Install**. The image is
    downloaded from GHCR. Nothing is compiled on your machine.
 4. Optionally enable **Show in sidebar**. Keep **Auto update** **off**

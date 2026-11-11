@@ -184,6 +184,6 @@ LABEL \
     io.hass.arch="${BUILD_ARCH}" \
     org.opencontainers.image.title="Home Assistant App: Klipper" \
     org.opencontainers.image.description="Klipper, Moonraker and Mainsail on Home Assistant OS" \
-    org.opencontainers.image.source="https://github.com/OWNER/klipper-haos" \
+    org.opencontainers.image.source="https://github.com/wendelnascimento/klipper-haos" \
     org.opencontainers.image.licenses="MIT AND GPL-3.0-only" \
     org.opencontainers.image.version="${BUILD_VERSION}"

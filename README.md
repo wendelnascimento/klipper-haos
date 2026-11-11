@@ -76,7 +76,7 @@ configured yet.*
    **Repositories**, and add:
 
    ```
-   https://github.com/OWNER/klipper-haos
+   https://github.com/wendelnascimento/klipper-haos
    ```
 
 2. Install the **Klipper** app. Do not start it yet.
