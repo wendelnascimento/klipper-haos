@@ -165,7 +165,9 @@ if [[ "${code}" == "401" ]]; then pass "spoofed X-Real-IP/X-Forwarded-For is ign
 check "Mainsail is served on the direct port" bash -c "curl -sf '${DIRECT}/' | grep -q 'src=\"/assets/'"
 if wait_for 60 test -s "${WORK}/config/moonraker.apikey"; then
     pass "API key exported when export_api_key is on"
-    key="$(tr -d '\r\n' < "${WORK}/config/moonraker.apikey")"
+    # The file is root-owned with mode 600, so read it inside the container
+    # (CI runners do not run the tests as root).
+    key="$(docker exec "${APP}" cat /config/moonraker.apikey | tr -d '\r\n')"
     code=$(curl -s -o "${DEVNULL}" -w '%{http_code}' -H "X-Api-Key: ${key}" "${DIRECT}/server/info")
     if [[ "${code}" == "200" ]]; then pass "direct port accepts the API key (200)"; else fail "API key request returned ${code}"; fi
     perms=$(docker exec "${APP}" stat -c '%a' /config/moonraker.apikey)
@@ -185,7 +187,8 @@ dd if=/dev/zero bs=1M count=24 2> /dev/null | tr '\0' ';' > "${WORK}/big.gcode"
 code=$(curl -s -o "${DEVNULL}" -w '%{http_code}' -F "file=@$(host_path "${WORK}/big.gcode");filename=big.gcode" "${INGRESS}/server/files/upload")
 if [[ "${code}" == "201" ]]; then pass "24 MiB G-code upload through ingress (201)"; else fail "upload returned ${code}"; fi
 check "uploaded file stored in /data/printer_data/gcodes" test -f "${WORK}/data/printer_data/gcodes/big.gcode"
-echo "# user edit marker" >> "${WORK}/config/printer.cfg"
+# printer.cfg is created by root in the container; edit it the same way.
+docker exec "${APP}" sh -c 'echo "# user edit marker" >> /config/printer.cfg'
 
 # Thumbnails embedded in G-code are decoded and resized with Pillow (which
 # the app upgrades beyond Moonraker's cap for security fixes).
