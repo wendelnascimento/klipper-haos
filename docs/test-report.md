@@ -3,6 +3,49 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## v0.1.0 on real Home Assistant OS — 2026-11-11
+
+Environment: the maintainer's Home Assistant OS host. HAOS 18.2
+(`generic-x86-64`), Supervisor 2026.10.5, Home Assistant Core 2026.7.4,
+amd64, 2 CPU cores, 3.7 GiB RAM (1.9 GiB available before the app
+started). **No printer connected.** The only USB serial device on the host
+is a Zigbee coordinator used by another app; `serial_device` was left
+empty, so the app never opened it.
+
+The app was installed from the published repository and the released
+`ghcr.io/wendelnascimento/klipper-haos:0.1.0` image. Steps were driven
+through the Supervisor API (the same calls the UI makes), and ingress was
+tested with a real ingress session through Home Assistant Core.
+
+| Check | Result |
+|---|---|
+| CI on GitHub Actions (static, app linter, unit, image, firmware, profile, integration) | **Pass** (after fixing two CI-only problems, see below) |
+| Release workflow: metadata check, full test suite, amd64 image build and push, multi-arch manifest | **Pass**. Image pulled anonymously from GHCR |
+| Release workflow: GitHub release with firmware | **Fail** in v0.1.0 (relative output path passed to `docker run -v`). Fixed after the release; v0.1.0 has no GitHub release or firmware assets |
+| Repository added to the app store; app listed as experimental | **Pass**. The Supervisor logged a warning because it read `klipper/mainsail/config.json` as an app manifest (fixed after the release: file renamed, static check added) |
+| Install (image pull 12 s), first start | **Pass**. Services start in order; starter configs and the Ender 3 V3 SE profile are seeded in the app config folder |
+| `uart: true` mapping and `/dev/serial/by-id` | **Pass** (the app sees the host's serial device by id). No printer, so no Klipper connection |
+| Klipper with no serial device | **Pass**: reports "Option 'serial' in section 'mcu' must be specified" |
+| Security settings reported by the Supervisor | not privileged, no full access, no host network, AppArmor default profile, protection mode on, direct port unmapped |
+| Real ingress (HA Core → Supervisor → app), 11 checks | **Pass**: Mainsail index and JS bundle use the real ingress path, no placeholder left, `config.json`, Moonraker API (200), request without an ingress session rejected (401), WebSocket upgrade with the HA `Origin` (101), 24 MiB G-code upload in 2 s (201), test file deleted |
+| Idle resource use on this host | **56.5 MiB** RAM, about **0.4 %** CPU (three samples) |
+
+CI-only problems found by the first GitHub run (both passed locally):
+
+* The app linter rejects manifest keys set to their default value.
+* The integration test read a root-owned, mode 600 file from the host;
+  GitHub runners are not root. Reproduced with an unprivileged user in an
+  Ubuntu container and fixed.
+
+Observed but not changed: Moonraker downloads the public `usb.ids` file at
+start-up (`machine.py: Fetching latest usb.ids file`). This is device-name
+data, not code.
+
+Not covered by this run: the Mainsail panel viewed in a browser inside the
+Home Assistant frontend, backup and restore, update and rollback, the
+watchdog, the direct port from another LAN host, and everything that needs
+the printer.
+
 ## v0.1.0 (pre-release) — 2026-11-10
 
 Environment: Windows 11 development PC, Docker Desktop (Engine 29.2.0,
@@ -69,15 +112,12 @@ listed the seeded files. See the screenshot in the README.
 
 | Requirement | Why not yet | Milestone |
 |---|---|---|
-| App appears in the HAOS app store and installs | Needs a published image and a test HAOS host | v0.1.0 |
-| Ingress through the real Home Assistant frontend and Supervisor (including remote access) | Tested only against a simulated Supervisor proxy | v0.3.0 |
-| Large uploads through real ingress | As above | v0.3.0 |
-| Supervisor `uart` mapping, `/dev/serial/by-id`, USB re-plug | Needs HAOS and a USB serial device | v0.2.0 |
+| Mainsail panel in a browser inside the Home Assistant frontend (including remote access) | Real ingress was tested by script only (see the 2026-11-11 run) | v0.3.0 |
+| Printer serial connection, USB re-plug | Needs the printer (`uart` and by-id were confirmed on HAOS) | v0.2.0 |
 | HA backup → restore cycle, app update and rollback | Needs HAOS | v0.3.0 |
 | Client IP preservation on the published port (`trusted_networks`) | Depends on the HAOS Docker configuration | v0.3.0 |
 | Supervisor watchdog restarting an unhealthy app | Needs HAOS | v0.3.0 |
 | Resource usage on the target Celeron host, idle and printing | Needs the target hardware | v0.2.0 |
 | Every step of the [hardware validation checklist](hardware-validation.md) | Needs the printer | v0.2.0 |
 | Firmware flashing and recovery on an Ender 3 V3 SE | Needs the printer | v0.2.0 |
-| GitHub Actions workflows and GHCR publishing | Need a GitHub repository; the workflows have not run yet | v0.1.0 |
-| `frenck/action-addon-linter` | Runs in CI only. Locally the manifest was validated against the linter's JSON schema (0 errors), and its extra rules were reviewed (the obsolete `watchdog` key was removed) | v0.1.0 |
+| GitHub release with firmware assets | Failed in v0.1.0; fixed, first runs with the next release | v0.1.1 |

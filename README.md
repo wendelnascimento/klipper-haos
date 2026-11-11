@@ -8,9 +8,9 @@ no Raspberry Pi, no second operating system, no virtual machine and no
 unmanaged Docker containers. The Home Assistant Supervisor installs,
 updates, backs up and supervises it like any other app.
 
-> **Status: experimental (v0.1.0).** The app is built and tested
-> automatically in containers, but it has **not yet been validated on a real
-> Home Assistant OS installation or on real printer hardware**. Read
+> **Status: experimental (v0.1.0).** The app is tested automatically in
+> containers and has been installed and run on a real Home Assistant OS
+> host, but it has **not yet been validated with real printer hardware**. Read
 > [Known limitations](#known-limitations) before using it with a printer.
 
 ![Mainsail served through the simulated Home Assistant ingress path in the automated test environment (no printer connected)](docs/images/mainsail-ingress-test.jpg)
@@ -51,8 +51,8 @@ configured yet.*
 | Direct port: API key auth, header spoofing protection, CORS | **Tested** (automated) |
 | Persistence across restarts, crash-loop protection, graceful stop | **Tested** (automated) |
 | Ender 3 V3 SE profile: syntax and pins against the compiled MCU dictionary | **Tested** (Klipper batch mode) |
-| Installation from the app store on real Home Assistant OS | **Not yet tested** |
-| Ingress through the real Home Assistant frontend and Supervisor | **Not yet tested** |
+| Installation from the app store on real Home Assistant OS | **Tested** (HAOS 18.2, no printer connected) |
+| Ingress through the real Supervisor: UI, API, WebSocket, 24 MiB upload | **Tested** (scripted; browser view in the HA frontend not yet checked) |
 | Home Assistant backup and restore, app updates | **Not yet tested** |
 | USB serial connection to a real printer | **Not yet tested** |
 | Ender 3 V3 SE on real hardware (motion, heaters, probe, printing) | **Not yet tested** |
@@ -140,8 +140,8 @@ the printer is not touched. To go back to the stock firmware, see
 
 ## Known limitations
 
-* **Not validated on real HAOS or real printers yet.** Everything marked
-  "not yet tested" above is unverified.
+* **Not validated with a real printer yet.** Everything marked "not yet
+  tested" above is unverified.
 * **A host restart interrupts a running print.** Klipper runs on the Home
   Assistant machine. Rebooting or updating Home Assistant OS, restarting or
   updating this app, or a host crash all end the current print. Klipper's

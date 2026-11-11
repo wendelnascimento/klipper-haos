@@ -7,9 +7,9 @@ This app runs three programs:
 * **Moonraker**, the API server used by Mainsail, slicers and other clients.
 * **Mainsail**, the web interface, shown in the Home Assistant sidebar.
 
-> **Experimental.** This app has passed automated container tests but has
-> not yet been validated on real Home Assistant OS installations or real
-> printers. Follow the hardware validation checklist before printing.
+> **Experimental.** This app has passed automated container tests and runs
+> on a real Home Assistant OS host, but it has not yet been validated with a
+> real printer. Follow the hardware validation checklist before printing.
 
 ## First start
 

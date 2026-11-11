@@ -4,6 +4,15 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- The Supervisor no longer logs an "Invalid app config" warning when it
+  scans the repository (the Mainsail settings file was named `config.json`).
+- The release workflow now builds the firmware assets (the firmware build
+  script failed on a relative output directory).
+
 ## [0.1.0] - 2026-11-11
 
 First experimental release. Not yet validated on real Home Assistant OS or
