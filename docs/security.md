@@ -11,7 +11,7 @@ physical access to the printer.
 | Direct port `7125/tcp` | **not published** (`null`) | No network exposure unless the user enables it. |
 | Moonraker listen address | `127.0.0.1:7126` | Only nginx inside the container can reach it. |
 | Ingress server | accepts only `172.30.32.2` | Home Assistant ingress requirement. Users are authenticated by HA. |
-| Ingress panel | admin users only (`panel_admin: true`) | Printer control is an admin action. |
+| Ingress panel | admin users only (`panel_admin`, default `true`) | Printer control is an admin action. |
 | Trusted clients | nginx (`127.0.0.1`) and the ingress proxy only | No LAN-wide trust by default. |
 | Authentication on the direct port | Moonraker API key or Moonraker login | No hardcoded credentials, no embedded tokens. |
 | CORS | none | Only the built-in Mainsail (same origin). |

@@ -13,21 +13,20 @@ arch:
 stage: experimental
 
 # s6-overlay v3 is PID 1, so the Docker init must be disabled.
+# Defaults that apply and are deliberately not repeated (the app linter
+# rejects keys set to their default): startup: application, boot: auto.
 init: false
-startup: application
-boot: auto
 # Give Klipper time to close the MCU connection and flush logs on stop.
 timeout: 30
 
-# Mainsail in the Home Assistant sidebar.
+# Mainsail in the Home Assistant sidebar. Defaults that apply: ingress_port
+# 8099 (nginx listens there) and panel_admin true (admin users only).
 ingress: true
-ingress_port: 8099
 # Stream POST bodies so large G-code uploads are not buffered (and capped)
 # by the Supervisor ingress proxy.
 ingress_stream: true
 panel_icon: mdi:printer-3d
 panel_title: Mainsail
-panel_admin: true
 
 # Optional direct access for slicers and external clients. Disabled by
 # default (null). Users enable it in the app's Network settings.
@@ -44,9 +43,8 @@ map:
   - type: app_config
     read_only: false
 
-# Hot backups keep the printer running; a pre-backup hook snapshots the
-# Moonraker database so the copy in the backup is consistent.
-backup: hot
+# Hot backups (the default) keep the printer running; a pre-backup hook
+# snapshots the Moonraker database so the copy in the backup is consistent.
 backup_pre: /usr/local/bin/khaos-backup-pre
 backup_exclude:
   - "printer_data/logs/*"
