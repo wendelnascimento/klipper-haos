@@ -1,0 +1,3 @@
+#!/bin/sh
+# Klipper crash: keep Moonraker/Mainsail up so the user can fix the config.
+exec /usr/local/bin/khaos-finish klipper "$1" "$2" stop

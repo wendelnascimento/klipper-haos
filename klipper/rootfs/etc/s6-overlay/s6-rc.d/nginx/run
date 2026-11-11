@@ -1,0 +1,18 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# nginx: serves Mainsail and proxies Moonraker.
+#   8099 - Home Assistant ingress (only 172.30.32.2 may connect)
+#   7125 - optional direct access for slicers (enable in the Network section)
+# ==============================================================================
+# shellcheck source=../../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+delay=$(khaos::restart_delay nginx)
+if (( delay > 0 )); then
+    sleep "${delay}"
+fi
+
+mkdir -p /tmp/nginx
+bashio::log.info "Starting nginx"
+exec nginx -c /etc/nginx/nginx.conf

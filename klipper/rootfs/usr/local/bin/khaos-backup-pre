@@ -1,0 +1,22 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Home Assistant backup_pre hook.
+#
+# Asks Moonraker for a consistent snapshot of its SQLite database so the hot
+# backup contains a restorable copy even if the live file was mid-write.
+#
+# This hook MUST NOT fail: a non-zero exit aborts the whole Home Assistant
+# backup. Moonraker refuses database backups while printing; that is fine,
+# the live database file is still included in the backup.
+# ==============================================================================
+# shellcheck source=../lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+if output=$("${MOONRAKER_PYTHON}" "${KHAOS_LIB_DIR}/moonraker_rpc.py" \
+        --socket "${KHAOS_MOONRAKER_SOCK}" backup-database 2>&1); then
+    bashio::log.info "Pre-backup: ${output}"
+else
+    bashio::log.warning "Pre-backup: database snapshot skipped (${output})"
+fi
+exit 0

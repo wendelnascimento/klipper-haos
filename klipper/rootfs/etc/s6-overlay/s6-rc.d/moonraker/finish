@@ -1,0 +1,3 @@
+#!/bin/sh
+# Without Moonraker the app is unusable: stop the app after repeated crashes.
+exec /usr/local/bin/khaos-finish moonraker "$1" "$2" halt

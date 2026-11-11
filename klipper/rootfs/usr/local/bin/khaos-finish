@@ -1,0 +1,58 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Shared s6 finish handler with crash-loop protection.
+#
+#   khaos-finish <service> <exit-code> <signal> <on-give-up>
+#
+# <on-give-up> is what happens after KHAOS_CRASH_MAX failures within
+# KHAOS_CRASH_WINDOW seconds:
+#   stop - leave this service down (exit 125) but keep the rest of the app
+#          running, so the user can still fix the config from Mainsail
+#   halt - stop the whole app; Home Assistant shows it as stopped
+# ==============================================================================
+# shellcheck source=../lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+service="$1"
+exit_code="$2"
+signal="$3"
+on_give_up="$4"
+
+# 256 = killed by a signal. SIGTERM/SIGINT mean a deliberate stop
+# (app shutdown or s6-svc), which is not a crash.
+if [[ "${exit_code}" -eq 256 ]]; then
+    if [[ "${signal}" -eq 15 || "${signal}" -eq 2 ]]; then
+        bashio::log.info "${service} stopped."
+        exit 0
+    fi
+    bashio::log.warning "${service} was killed by signal ${signal}."
+elif [[ "${exit_code}" -eq 0 ]]; then
+    bashio::log.info "${service} exited normally; it will be restarted."
+    exit 0
+else
+    bashio::log.warning "${service} exited with code ${exit_code}."
+fi
+
+# Record the crash and count the ones within the window.
+mkdir -p "${KHAOS_RUN_DIR}"
+crash_file="${KHAOS_RUN_DIR}/crashes-${service}"
+now=$(date +%s)
+echo "${now}" >> "${crash_file}"
+awk -v limit=$(( now - KHAOS_CRASH_WINDOW )) '$1 >= limit' "${crash_file}" > "${crash_file}.tmp"
+mv "${crash_file}.tmp" "${crash_file}"
+count=$(wc -l < "${crash_file}")
+
+if (( count >= KHAOS_CRASH_MAX )); then
+    bashio::log.error "${service} failed ${count} times in ${KHAOS_CRASH_WINDOW}s; giving up to avoid a restart loop."
+    bashio::log.error "Check ${KHAOS_LOG_DIR}/${service}.log and your configuration, then restart the app."
+    if [[ "${on_give_up}" == "halt" ]]; then
+        echo 1 > /run/s6-linux-init-container-results/exitcode
+        exec /run/s6/basedir/bin/halt
+    fi
+    # 125 tells s6-supervise not to restart the service.
+    exit 125
+fi
+
+bashio::log.warning "Restarting ${service} (failure ${count}/${KHAOS_CRASH_MAX})."
+exit 0

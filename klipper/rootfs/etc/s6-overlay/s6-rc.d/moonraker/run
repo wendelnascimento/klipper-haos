@@ -1,0 +1,27 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Moonraker API server. Listens on 127.0.0.1:7126 only; nginx is the single
+# network entry point. Logs go to the app log and to moonraker.log.
+# ==============================================================================
+# shellcheck source=../../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+delay=$(khaos::restart_delay moonraker)
+if (( delay > 0 )); then
+    bashio::log.info "Waiting ${delay}s before restarting Moonraker..."
+    sleep "${delay}"
+fi
+
+args=()
+if [[ "$(khaos::option log_level info)" == "debug" ]]; then
+    args+=(--verbose)
+fi
+
+bashio::log.info "Starting Moonraker"
+exec "${MOONRAKER_PYTHON}" /opt/moonraker/moonraker/moonraker.py \
+    --datapath "${KHAOS_DATA_DIR}" \
+    --configfile "${KHAOS_CONFIG_DIR}/moonraker.conf" \
+    --logfile "${KHAOS_LOG_DIR}/moonraker.log" \
+    --unixsocket "${KHAOS_MOONRAKER_SOCK}" \
+    "${args[@]}"

@@ -1,0 +1,25 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Klipper host process (klippy).
+# Klipper stays running when printer.cfg is invalid or the MCU is missing: it
+# reports the error through its API, so Mainsail can show it and the user can
+# fix the configuration without a restart loop.
+# ==============================================================================
+# shellcheck source=../../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+delay=$(khaos::restart_delay klipper)
+if (( delay > 0 )); then
+    bashio::log.info "Waiting ${delay}s before restarting Klipper..."
+    sleep "${delay}"
+fi
+
+rm -f "${KHAOS_RUN_DIR}/klippy.sock"
+
+bashio::log.info "Starting Klipper (log: ${KHAOS_LOG_DIR}/klippy.log)"
+exec "${KLIPPY_PYTHON}" /opt/klipper/klippy/klippy.py \
+    "${KHAOS_CONFIG_DIR}/printer.cfg" \
+    --input-tty="${KHAOS_RUN_DIR}/printer" \
+    --api-server="${KHAOS_RUN_DIR}/klippy.sock" \
+    --logfile="${KHAOS_LOG_DIR}/klippy.log"

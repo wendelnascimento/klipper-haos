@@ -1,0 +1,32 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Optionally export the Moonraker API key to the app config folder so users
+# can paste it into slicers. Runs once per app start (s6-svc -O) and never
+# fails start-up. The key itself is never written to the log.
+# ==============================================================================
+# shellcheck source=../../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+# Do not restart this service when it exits.
+s6-svc -O .
+
+keyfile="${KHAOS_CONFIG_DIR}/moonraker.apikey"
+
+if [[ "$(khaos::option export_api_key false)" != "true" ]]; then
+    if [[ -f "${keyfile}" ]]; then
+        rm -f "${keyfile}"
+        bashio::log.info "Removed exported API key file (export_api_key is off)."
+    fi
+    exit 0
+fi
+
+if "${MOONRAKER_PYTHON}" "${KHAOS_LIB_DIR}/moonraker_rpc.py" \
+    --socket "${KHAOS_MOONRAKER_SOCK}" --wait 120 \
+    export-api-key "${keyfile}" > /dev/null 2>&1; then
+    bashio::log.notice "Moonraker API key written to moonraker.apikey in the app config folder."
+    bashio::log.notice "Turn off 'export_api_key' once you have copied it."
+else
+    bashio::log.warning "Could not export the Moonraker API key (Moonraker not ready?)."
+fi
+exit 0

@@ -1,0 +1,66 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# One-time initialisation at every app start:
+#   * validate the app options (abort start-up on unsafe/invalid values)
+#   * create persistent directories
+#   * seed / regenerate configuration files
+#   * print diagnostics that help with support requests
+# ==============================================================================
+set -e
+# shellcheck source=../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+bashio::log.level "$(khaos::option log_level info)"
+
+bashio::log.info "Klipper HAOS - component versions:"
+while IFS= read -r line; do
+    bashio::log.info "  ${line}"
+done < /opt/versions.txt
+
+mkdir -p "${KHAOS_RUN_DIR}" "${KHAOS_DATA_DIR}"
+# Crash counters only make sense within one container lifetime.
+rm -f "${KHAOS_RUN_DIR}"/crashes-*
+
+if ! output=$("${MOONRAKER_PYTHON}" "${KHAOS_LIB_DIR}/khaos_config.py" generate 2>&1); then
+    bashio::log.fatal "Invalid app configuration:"
+    bashio::log.fatal "${output}"
+    bashio::log.fatal "Fix the option in the app's Configuration tab and start the app again."
+    bashio::exit.nok
+fi
+while IFS= read -r line; do
+    [[ -z "${line}" ]] && continue
+    if [[ "${line}" == WARNING:* ]]; then
+        bashio::log.warning "${line#WARNING: }"
+    else
+        bashio::log.info "${line}"
+    fi
+done <<< "${output}"
+
+# ---- Diagnostics --------------------------------------------------------------
+serial="$(khaos::option serial_device)"
+if [[ -n "${serial}" ]]; then
+    if [[ -c "${serial}" ]]; then
+        bashio::log.info "Printer serial device: ${serial} -> $(readlink -f "${serial}")"
+    else
+        bashio::log.warning "Configured serial device ${serial} is not present."
+        bashio::log.warning "Klipper will keep retrying. Check the USB cable and that the printer is powered."
+    fi
+else
+    bashio::log.notice "No printer serial device selected yet (app option 'serial_device')."
+fi
+
+if [[ -d /dev/serial/by-id ]]; then
+    bashio::log.info "Serial devices visible to the app (by-id):"
+    for dev in /dev/serial/by-id/*; do
+        [[ -e "${dev}" ]] && bashio::log.info "  ${dev}"
+    done
+else
+    bashio::log.info "No /dev/serial/by-id devices visible."
+fi
+
+if [[ -r /proc/meminfo ]]; then
+    mem_total=$(awk '/^MemTotal:/ {print int($2/1024)}' /proc/meminfo)
+    mem_avail=$(awk '/^MemAvailable:/ {print int($2/1024)}' /proc/meminfo)
+    bashio::log.info "Host memory: ${mem_avail} MiB available of ${mem_total} MiB"
+fi
