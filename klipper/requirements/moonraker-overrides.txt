@@ -1,0 +1,14 @@
+# Security overrides installed AFTER Moonraker's own requirements, with
+# --no-deps, deliberately exceeding Moonraker's upper version caps.
+#
+# Every entry needs a reason and a regression test. Remove an entry as soon
+# as the pinned Moonraker release allows the fixed version itself.
+#
+# tornado: Moonraker v0.11.0 caps at 6.5.8; 6.5.9 fixes two HIGH CVEs in the
+#   HTTP server. Patch release, no API changes.
+tornado==6.5.9
+# pillow: Moonraker v0.11.0 caps at 12.3.0; 13.0.0 fixes 28 HIGH/CRITICAL
+#   CVEs. Moonraker only uses Image.open/thumbnail/save to process G-code
+#   thumbnails (untrusted input). Covered by the thumbnail test in
+#   tests/integration/run.sh.
+pillow==13.0.0
