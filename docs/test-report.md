@@ -3,6 +3,22 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## v0.1.1 release — 2026-11-11
+
+The v0.1.1 tag ran the release workflow on GitHub Actions. Before tagging,
+the workflow's firmware step was run locally as an unprivileged user in an
+Ubuntu container, the same setup as the CI runner.
+
+| Check | Result |
+|---|---|
+| Release workflow: metadata check, full test suite, amd64 image build and push, multi-arch manifest | **Pass** |
+| Release workflow: GitHub release with firmware | **Pass**. Pre-release created, notes taken from the changelog |
+| Firmware assets downloaded from the release | **Pass**: `klipper.bin`, `klipper.dict` and `klipper.config.full` match the published `SHA256SUMS`; the `klipper.bin` SHA-256 `7cf49e4cdca3a6a7d49dd1e7a6e6377922dee88476e6b7f8c63ad07c8aecfe69` is identical to the local builds |
+| `ghcr.io/wendelnascimento/klipper-haos:0.1.1` pulled anonymously | **Pass**. Image label `io.hass.version` is `0.1.1` |
+
+Not covered: installing v0.1.1 on Home Assistant OS, including the update
+from v0.1.0, and anything that needs the printer.
+
 ## v0.1.0 on real Home Assistant OS — 2026-11-11
 
 Environment: the maintainer's Home Assistant OS host. HAOS 18.2
@@ -21,7 +37,7 @@ tested with a real ingress session through Home Assistant Core.
 |---|---|
 | CI on GitHub Actions (static, app linter, unit, image, firmware, profile, integration) | **Pass** (after fixing two CI-only problems, see below) |
 | Release workflow: metadata check, full test suite, amd64 image build and push, multi-arch manifest | **Pass**. Image pulled anonymously from GHCR |
-| Release workflow: GitHub release with firmware | **Fail** in v0.1.0 (relative output path passed to `docker run -v`). Fixed after the release; v0.1.0 has no GitHub release or firmware assets |
+| Release workflow: GitHub release with firmware | **Fail** in v0.1.0 (relative output path passed to `docker run -v`). Fixed after the release; v0.1.0 has no GitHub release or firmware assets. Passes in v0.1.1 |
 | Repository added to the app store; app listed as experimental | **Pass**. The Supervisor logged a warning because it read `klipper/mainsail/config.json` as an app manifest (fixed after the release: file renamed, static check added) |
 | Install (image pull 12 s), first start | **Pass**. Services start in order; starter configs and the Ender 3 V3 SE profile are seeded in the app config folder |
 | `uart: true` mapping and `/dev/serial/by-id` | **Pass** (the app sees the host's serial device by id). No printer, so no Klipper connection |
@@ -120,4 +136,3 @@ listed the seeded files. See the screenshot in the README.
 | Resource usage on the target Celeron host, idle and printing | Needs the target hardware | v0.2.0 |
 | Every step of the [hardware validation checklist](hardware-validation.md) | Needs the printer | v0.2.0 |
 | Firmware flashing and recovery on an Ender 3 V3 SE | Needs the printer | v0.2.0 |
-| GitHub release with firmware assets | Failed in v0.1.0; fixed, first runs with the next release | v0.1.1 |
