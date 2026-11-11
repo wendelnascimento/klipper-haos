@@ -31,6 +31,9 @@ host_path() {
 }
 
 mkdir -p "${OUT}"
+# docker run -v treats a relative source as a volume name (exit 125), so
+# always pass an absolute path.
+OUT="$(cd "${OUT}" && pwd)"
 echo "Building ${PRINTER} firmware for Klipper ${KLIPPER_COMMIT}"
 docker run --rm \
     -e KLIPPER_COMMIT="${KLIPPER_COMMIT}" \
