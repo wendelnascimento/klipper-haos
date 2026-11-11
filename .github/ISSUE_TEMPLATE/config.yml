@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Klipper documentation
+    url: https://www.klipper3d.org/
+    about: Questions about Klipper configuration itself (not specific to this app).
+  - name: Moonraker documentation
+    url: https://moonraker.readthedocs.io/
+    about: Moonraker API and configuration reference.

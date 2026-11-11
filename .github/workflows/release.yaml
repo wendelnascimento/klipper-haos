@@ -1,0 +1,169 @@
+name: Release
+
+# Publishing is triggered only by a version tag (vX.Y.Z) that matches
+# klipper/config.yaml. Images are pushed with the version tag only: Home
+# Assistant pulls exactly the version named in config.yaml, and there is no
+# floating "latest" tag to depend on.
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  prepare:
+    name: Validate release metadata
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.meta.outputs.version }}
+      architectures: ${{ steps.meta.outputs.architectures }}
+      image_name: ${{ steps.meta.outputs.image_name }}
+      registry_prefix: ${{ steps.meta.outputs.registry_prefix }}
+      build_matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Read and check app metadata
+        id: meta
+        run: |
+          python3 - <<'EOF'
+          import json, os, re, sys, yaml
+          cfg = yaml.safe_load(open("klipper/config.yaml"))
+          version = cfg["version"]
+          tag = os.environ["GITHUB_REF_NAME"]
+          if tag != f"v{version}":
+              sys.exit(f"Tag {tag} does not match config.yaml version {version}")
+          if not re.fullmatch(r"\d+\.\d+\.\d+", version):
+              sys.exit(f"Version {version} is not semantic (X.Y.Z)")
+          changelog = open("klipper/CHANGELOG.md").read()
+          if f"## [{version}]" not in changelog:
+              sys.exit(f"klipper/CHANGELOG.md has no entry for {version}")
+          image = cfg["image"]
+          owner = os.environ["GITHUB_REPOSITORY_OWNER"].lower()
+          if not image.startswith(f"ghcr.io/{owner}/"):
+              sys.exit(f"config.yaml image {image} is not under ghcr.io/{owner}/")
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"version={version}\n")
+              out.write(f"architectures={json.dumps(cfg['arch'])}\n")
+              out.write(f"image_name={image.rsplit('/', 1)[1]}\n")
+              out.write(f"registry_prefix={image.rsplit('/', 1)[0]}\n")
+          EOF
+
+      - name: Prepare build matrix
+        id: matrix
+        uses: home-assistant/builder/actions/prepare-multi-arch-matrix@2026.09.0
+        with:
+          architectures: ${{ steps.meta.outputs.architectures }}
+          image-name: ${{ steps.meta.outputs.image_name }}
+          registry-prefix: ${{ steps.meta.outputs.registry_prefix }}
+
+  test:
+    name: Full test suite
+    needs: prepare
+    uses: ./.github/workflows/ci.yaml
+
+  build:
+    name: Build and push ${{ matrix.arch }} image
+    needs: [prepare, test]
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+      id-token: write
+      packages: write
+    strategy:
+      fail-fast: true
+      matrix: ${{ fromJSON(needs.prepare.outputs.build_matrix) }}
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build and push image
+        uses: home-assistant/builder/actions/build-image@2026.09.0
+        with:
+          arch: ${{ matrix.arch }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          context: ./klipper
+          image: ${{ matrix.image }}
+          image-tags: |
+            ${{ needs.prepare.outputs.version }}
+          labels: |
+            io.hass.type=app
+            io.hass.name=Klipper
+            io.hass.description=Klipper, Moonraker and Mainsail on Home Assistant OS
+            io.hass.url=${{ github.server_url }}/${{ github.repository }}
+          push: "true"
+          version: ${{ needs.prepare.outputs.version }}
+
+  manifest:
+    name: Publish multi-arch manifest
+    needs: [prepare, build]
+    runs-on: ubuntu-24.04
+    permissions:
+      id-token: write
+      packages: write
+    steps:
+      - name: Publish manifest
+        uses: home-assistant/builder/actions/publish-multi-arch-manifest@2026.09.0
+        with:
+          architectures: ${{ needs.prepare.outputs.architectures }}
+          container-registry-password: ${{ secrets.GITHUB_TOKEN }}
+          image-name: ${{ needs.prepare.outputs.image_name }}
+          image-tags: |
+            ${{ needs.prepare.outputs.version }}
+          registry-prefix: ${{ needs.prepare.outputs.registry_prefix }}
+
+  github-release:
+    name: GitHub release with firmware
+    needs: [prepare, manifest]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build firmware (matches the released Klipper commit)
+        run: |
+          bash tools/build-firmware.sh ender3-v3-se dist/ender3-v3-se
+          cd dist/ender3-v3-se
+          version="${{ needs.prepare.outputs.version }}"
+          for f in klipper.bin klipper.dict klipper.config.full; do
+            mv "$f" "ender3-v3-se-${version}-${f}"
+          done
+          sha256sum ender3-v3-se-* > "ender3-v3-se-${version}-SHA256SUMS"
+          rm -f klipper.bin.sha256
+
+      - name: Extract release notes from the changelog
+        run: |
+          version="${{ needs.prepare.outputs.version }}"
+          awk -v v="## [${version}]" '
+            index($0, v) == 1 { on = 1; next }
+            on && /^## \[/ { exit }
+            on { print }
+          ' klipper/CHANGELOG.md > release-notes.md
+          {
+            echo
+            echo "### Firmware"
+            echo "Ender 3 V3 SE Klipper MCU firmware built from the same Klipper commit as this release."
+            echo "Read docs/printer-setup.md before flashing. Flashing is never automatic."
+          } >> release-notes.md
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "Klipper HAOS ${GITHUB_REF_NAME}" \
+            --notes-file release-notes.md \
+            --prerelease \
+            dist/ender3-v3-se/*

@@ -1,0 +1,62 @@
+name: Bug report
+description: Something does not work as documented
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting! **Do not paste API keys, passwords or tokens.**
+        Security problems: please use private reporting (see SECURITY.md).
+  - type: input
+    id: app_version
+    attributes:
+      label: App version
+      description: Shown at the top of the app log ("app=...").
+    validations:
+      required: true
+  - type: input
+    id: ha_versions
+    attributes:
+      label: Home Assistant OS / Supervisor / Core versions
+      description: Settings → About.
+    validations:
+      required: true
+  - type: input
+    id: hardware
+    attributes:
+      label: Host hardware
+      placeholder: e.g. Intel Celeron N4020 laptop, 4 GB RAM
+    validations:
+      required: true
+  - type: input
+    id: printer
+    attributes:
+      label: Printer and controller board
+      placeholder: e.g. Ender 3 V3 SE, CR4NS200320C13 (GD32F303RET6)
+  - type: dropdown
+    id: access
+    attributes:
+      label: How do you access Mainsail?
+      options:
+        - Sidebar (ingress), local network
+        - Sidebar (ingress), remote (Nabu Casa / reverse proxy)
+        - Direct port 7125
+        - Not relevant
+    validations:
+      required: true
+  - type: textarea
+    id: what_happened
+    attributes:
+      label: What happened, and what did you expect?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs
+      description: App log (from the start), plus klippy.log / moonraker.log excerpts if relevant.
+      render: text

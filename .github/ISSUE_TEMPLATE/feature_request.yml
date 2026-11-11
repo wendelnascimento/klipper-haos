@@ -1,0 +1,25 @@
+name: Feature request
+description: Suggest an improvement or a new printer / architecture
+labels: [enhancement]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+  - type: textarea
+    id: resources
+    attributes:
+      label: Resource and security impact
+      description: Memory/CPU on low-power hosts, new ports or permissions, new dependencies.
+  - type: checkboxes
+    id: help
+    attributes:
+      label: Contribution
+      options:
+        - label: I can help implement or test this

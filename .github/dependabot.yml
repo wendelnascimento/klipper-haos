@@ -1,0 +1,16 @@
+# Automated update PRs for GitHub Actions and the base images.
+# Upstream Klipper/Moonraker/Mainsail versions are bumped deliberately by a
+# maintainer (see docs/development.md), never automatically.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    labels: [dependencies]
+
+  - package-ecosystem: docker
+    directory: /klipper
+    schedule:
+      interval: weekly
+    labels: [dependencies]

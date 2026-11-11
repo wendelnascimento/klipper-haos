@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_call:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  lint:
+    name: Static validation
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: ShellCheck, Hadolint, yamllint, s6 tree, secrets
+        run: bash tests/static/run.sh
+
+      - name: Home Assistant app linter
+        uses: frenck/action-addon-linter@v2.21
+        with:
+          path: ./klipper
+
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run pytest in the app's Python version
+        run: |
+          docker run --rm -v "${PWD}:/src:ro" -w /src -e PYTHONDONTWRITEBYTECODE=1 \
+            python:3.13-alpine sh -c '
+              pip install -q --root-user-action=ignore pytest==8.4.2 pyyaml==6.0.3 &&
+              python -m pytest -q -p no:cacheprovider tests/unit'
+
+  build-and-test:
+    name: Build image, firmware and run tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out the repository
+        uses: actions/checkout@v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build app image (amd64)
+        run: |
+          version="$(python3 -c 'import yaml; print(yaml.safe_load(open("klipper/config.yaml"))["version"])')"
+          docker build --pull \
+            --build-arg BUILD_VERSION="${version}-ci.${GITHUB_SHA::7}" \
+            --build-arg BUILD_ARCH=amd64 \
+            -t klipper-haos:test klipper
+          docker run --rm --entrypoint cat klipper-haos:test /opt/versions.txt
+
+      - name: Build Ender 3 V3 SE firmware (not flashed)
+        run: bash tools/build-firmware.sh ender3-v3-se
+
+      - name: Validate printer profile (Klipper batch mode)
+        run: bash tests/profile/check-profile.sh klipper-haos:test ender3-v3-se
+
+      - name: Container integration tests
+        run: bash tests/integration/run.sh klipper-haos:test
+
+      - name: Vulnerability scan (report only)
+        run: |
+          docker run --rm -v /var/run/docker.sock:/var/run/docker.sock \
+            aquasec/trivy:0.76.2 image --quiet --scanners vuln \
+            --severity HIGH,CRITICAL --ignore-unfixed --exit-code 0 \
+            klipper-haos:test
+
+      - name: Image size
+        run: docker image ls klipper-haos:test --format '{{.Repository}}:{{.Tag}} {{.Size}}'

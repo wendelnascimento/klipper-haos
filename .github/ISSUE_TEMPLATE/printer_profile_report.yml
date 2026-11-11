@@ -1,0 +1,55 @@
+name: Printer profile report
+description: Report hardware validation results for a printer profile (or a board that differs)
+labels: [hardware, printer-profile]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for testing on real hardware! Only mark steps you actually performed.
+        Checklist: docs/hardware-validation.md
+  - type: input
+    id: printer
+    attributes:
+      label: Printer model
+    validations:
+      required: true
+  - type: input
+    id: board
+    attributes:
+      label: Board label, MCU chip, stepper driver chips
+      placeholder: e.g. CR4NS200320C13, GD32F303RET6, MS35774
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: App version and MCU firmware version
+    validations:
+      required: true
+  - type: checkboxes
+    id: steps
+    attributes:
+      label: Checklist steps that PASSED (performed by you)
+      options:
+        - label: 1. Board identified
+        - label: 2. MCU firmware version matches
+        - label: 3. Serial communication stable
+        - label: 4. Thermistor readings plausible
+        - label: 5. Fans correct
+        - label: 6. Endstops correct
+        - label: 7. Limited axis moves correct direction/distance
+        - label: 8. Homing
+        - label: 9. CR Touch / probe
+        - label: 10. Z-offset and bed mesh
+        - label: 11. Heating and thermal protection
+        - label: 12. PID calibration
+        - label: 13. Supervised first print
+  - type: textarea
+    id: failures
+    attributes:
+      label: Failed steps and changes you needed
+      description: e.g. inverted endstop pin, different probe offsets, TMC UART not responding.
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant printer.cfg changes / photos of the board
