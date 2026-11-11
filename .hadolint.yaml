@@ -1,0 +1,6 @@
+ignored:
+  # Alpine/Debian package versions are pinned through the digest-pinned base
+  # images; pinning every apk package version breaks on Alpine point releases.
+  - DL3018
+  # git clone is followed by an explicit commit hash check.
+  - DL3003
