@@ -1,0 +1,7 @@
+# Everything in this repository is consumed by Linux containers.
+# Force LF line endings so shell scripts and s6 service files keep working
+# when the repository is checked out on Windows.
+* text=auto eol=lf
+
+*.png binary
+*.bin binary

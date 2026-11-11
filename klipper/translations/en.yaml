@@ -1,0 +1,28 @@
+configuration:
+  serial_device:
+    name: Printer serial device
+    description: >-
+      Serial port of the printer controller. Prefer the /dev/serial/by-id/...
+      entry, which survives reboots and re-plugging. Leave empty until the
+      printer runs Klipper firmware.
+  log_level:
+    name: Log level
+    description: Verbosity of the app's own startup and supervision messages.
+  trusted_networks:
+    name: Trusted networks (direct port)
+    description: >-
+      CIDR ranges (for example 192.168.1.50/32) that may use the direct port
+      without an API key. Leave empty to require an API key for every client.
+      The Home Assistant internal network and catch-all ranges are rejected.
+  cors_domains:
+    name: CORS origins
+    description: >-
+      Extra web origins allowed to call Moonraker from a browser, for example
+      http://my-other-mainsail.local. Not needed for the built-in Mainsail.
+  export_api_key:
+    name: Export Moonraker API key
+    description: >-
+      Write the Moonraker API key to moonraker.apikey in the app config
+      folder so you can paste it into a slicer. Turn it off again afterwards.
+network:
+  7125/tcp: Mainsail and Moonraker API for slicers and external clients

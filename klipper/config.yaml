@@ -1,0 +1,72 @@
+# Home Assistant app manifest.
+# Reference: https://developers.home-assistant.io/docs/apps/configuration
+name: Klipper
+version: "0.1.0"
+slug: klipper
+description: >-
+  Klipper, Moonraker and Mainsail running on Home Assistant OS.
+  Turns your Home Assistant host into a 3D printer host.
+url: https://github.com/OWNER/klipper-haos/tree/main/klipper
+image: ghcr.io/OWNER/klipper-haos
+arch:
+  - amd64
+stage: experimental
+
+# s6-overlay v3 is PID 1, so the Docker init must be disabled.
+init: false
+startup: application
+boot: auto
+# Give Klipper time to close the MCU connection and flush logs on stop.
+timeout: 30
+
+# Mainsail in the Home Assistant sidebar.
+ingress: true
+ingress_port: 8099
+# Stream POST bodies so large G-code uploads are not buffered (and capped)
+# by the Supervisor ingress proxy.
+ingress_stream: true
+panel_icon: mdi:printer-3d
+panel_title: Mainsail
+panel_admin: true
+
+# Optional direct access for slicers and external clients. Disabled by
+# default (null). Users enable it in the app's Network settings.
+ports:
+  7125/tcp: null
+
+# Serial access for the printer controller (USB-to-UART bridge).
+# No privileged mode, no raw USB access, no extra capabilities.
+uart: true
+
+# /config inside the container is the user-visible app config folder
+# (/addon_configs/<repo>_klipper on the host). Klipper/Moonraker configs live there.
+map:
+  - type: app_config
+    read_only: false
+
+# Hot backups keep the printer running; a pre-backup hook snapshots the
+# Moonraker database so the copy in the backup is consistent.
+backup: hot
+backup_pre: /usr/local/bin/khaos-backup-pre
+backup_exclude:
+  - "printer_data/logs/*"
+  - "printer_data/comms/*"
+  - "*.tmp"
+
+# Health is reported by the Docker HEALTHCHECK in the Dockerfile; with the
+# app's Watchdog toggle enabled, the Supervisor restarts an unhealthy app.
+tmpfs: true
+
+options:
+  log_level: info
+  trusted_networks: []
+  cors_domains: []
+  export_api_key: false
+schema:
+  serial_device: "device(subsystem=tty)?"
+  log_level: list(debug|info|warning|error)
+  trusted_networks:
+    - "match(^[0-9a-fA-F:.]+/[0-9]{1,3}$)"
+  cors_domains:
+    - "match(^https?://[A-Za-z0-9*.-]+(:[0-9]{1,5})?$)"
+  export_api_key: bool

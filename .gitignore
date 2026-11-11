@@ -1,0 +1,14 @@
+# Firmware build output (tools/build-firmware.sh)
+firmware/out/
+
+# Python
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+
+# Editors / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
