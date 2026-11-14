@@ -70,8 +70,16 @@ jobs:
       - name: Build Ender 3 V3 SE firmware (not flashed)
         run: bash tools/build-firmware.sh ender3-v3-se
 
+      - name: Build Ender 3 V3 SE display firmware variant (not flashed)
+        run: bash tools/build-firmware.sh ender3-v3-se-display
+
       - name: Validate printer profile (Klipper batch mode)
         run: bash tests/profile/check-profile.sh klipper-haos:test ender3-v3-se
+
+      - name: Validate printer profile with the original display (Klipper batch mode)
+        run: |
+          bash tests/profile/check-profile.sh klipper-haos:test ender3-v3-se \
+            firmware/out/ender3-v3-se-display display.cfg firmware/out/ender3-v3-se
 
       - name: Container integration tests
         run: bash tests/integration/run.sh klipper-haos:test

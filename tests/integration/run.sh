@@ -115,6 +115,8 @@ check "starter printer.cfg was seeded" test -f "${WORK}/config/printer.cfg"
 check "moonraker.conf was seeded" test -f "${WORK}/config/moonraker.conf"
 check "generated Klipper include exists" test -f "${WORK}/config/klipper-haos/generated.cfg"
 check "Ender 3 V3 SE profile was installed" test -f "${WORK}/config/profiles/ender3-v3-se/printer.cfg"
+check "optional display.cfg installed, not included by default" bash -c "test -f '${WORK}/config/profiles/ender3-v3-se/display.cfg' && ! grep -q 'display.cfg' '${WORK}/config/printer.cfg'"
+check "display modules bundled in Klipper" docker exec "${APP}" sh -c 'cd /opt/klipper/klippy/extras && test -f e3v3se_display.py && test -f TJC3224.py && test -f printerInterface.py && test -f serial_bridge.py'
 check "Klipper reports the missing serial device" bash -c "curl -sf '${INGRESS}/printer/info' | grep -q \"Option 'serial' in section 'mcu' must be specified\""
 check "no compiler in the runtime image" bash -c "! docker exec ${APP} sh -c 'command -v gcc'"
 

@@ -83,6 +83,14 @@ RUN git clone --filter=blob:none https://github.com/Klipper3d/klipper.git /opt/k
     # built separately (see firmware/), never inside this image.
     && rm -rf .git .github lib src test out
 
+# --- Ender 3 V3 SE display modules (experimental) -----------------------------
+# Host modules for the original Creality display, from a pinned fork commit
+# with per-file SHA-256 checks (see the lock file). They only add new files to
+# klippy/extras and stay inactive unless printer.cfg has [e3v3se_display].
+COPY build/fetch-e3v3se-display.sh /tmp/build/fetch-e3v3se-display.sh
+RUN sh /tmp/build/fetch-e3v3se-display.sh \
+        /tmp/requirements/e3v3se-display.lock /opt/klipper klippy
+
 RUN python3 -m venv /opt/venv/klippy \
     && /opt/venv/klippy/bin/pip install \
         -r /opt/klipper/scripts/klippy-requirements.txt \
@@ -123,6 +131,7 @@ RUN { \
         echo "klipper=$(cat /opt/klipper/klippy/.version)"; \
         echo "moonraker=$(cat /opt/moonraker/moonraker/.version)"; \
         echo "mainsail_config=${MAINSAIL_CONFIG_VERSION}"; \
+        echo "e3v3se_display=$(sed -n 's/^commit \(.\{12\}\).*/\1/p' /tmp/requirements/e3v3se-display.lock)"; \
         echo "python=$(python3 -c 'import platform; print(platform.python_version())')"; \
     } > /opt/versions.txt \
     && /opt/venv/klippy/bin/pip freeze > /opt/klippy-freeze.txt \

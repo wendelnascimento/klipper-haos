@@ -33,7 +33,10 @@ run "static validation" bash tests/static/run.sh
 run "unit tests" docker run --rm -v "${SRC}:/src:ro" -w /src -e PYTHONDONTWRITEBYTECODE=1 \
     python:3.13-alpine sh -c 'pip install -q --root-user-action=ignore pytest==8.4.2 pyyaml==6.0.3 > /dev/null 2>&1 && python -m pytest -q -p no:cacheprovider tests/unit'
 run "firmware build" bash tools/build-firmware.sh ender3-v3-se
+run "firmware build (display variant)" bash tools/build-firmware.sh ender3-v3-se-display
 run "profile validation" bash tests/profile/check-profile.sh "${IMAGE}" ender3-v3-se
+run "profile validation (display)" bash tests/profile/check-profile.sh "${IMAGE}" ender3-v3-se \
+    firmware/out/ender3-v3-se-display display.cfg firmware/out/ender3-v3-se
 run "integration tests" bash tests/integration/run.sh "${IMAGE}"
 
 echo; echo "######## Summary"
