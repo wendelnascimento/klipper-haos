@@ -39,11 +39,15 @@ needed.
    the app version you run, or `tools/build-firmware.sh ender3-v3-se-display`.
    The normal `ender3-v3-se` firmware lacks the serial bridge.
 2. **Display firmware 1.0.6** on the screen itself. The menu draws icons
-   that are stored inside the screen, and other display firmware versions
-   keep them at other positions. Creality publishes the display firmware
-   separately from the mainboard firmware. If you are not sure which
-   version your screen runs, install display firmware 1.0.6 from Creality
-   first, following Creality's instructions.
+   that are stored inside the screen. The upstream project was built for
+   display firmware 1.0.6 and warns that other versions may keep the icons
+   at other positions. We found no documented way to read the screen's own
+   version, least of all once Klipper runs on the mainboard. The practical
+   check is checklist step D2: if the menu's icons look right, the screen
+   is compatible. If they look wrong, update the screen as described on
+   [Creality's download page](https://www.creality.com/pages/download-ender-3-v3-se),
+   which the upstream project links to. Wrong icons do not affect printing
+   or Mainsail.
 3. The stock display cable, connected as delivered.
 
 ## Enable it
@@ -90,7 +94,7 @@ Then work through the display steps at the end of the
 |---|---|
 | Klipper stops with `MCU Protocol error` and `Unknown command: serial_bridge_send` | `display.cfg` is included but the printer runs the normal firmware. Flash the display variant, or remove the include. |
 | Screen stays blank | Check the MCU version (step 2 above). Set `logging: True` in `display.cfg`, restart, and look for `e3v3se_display` and `Serial bridge` lines in `klippy.log`. |
-| Wrong or garbled icons | The screen does not run display firmware 1.0.6. |
+| Wrong or garbled icons | Most likely the screen does not run display firmware 1.0.6. Update it as described on Creality's download page (see Requirements). |
 | A menu entry shows a "not supported" pop-up | Expected for "Set max speed", "Set max acceleration" and "Set steps per-mm", which the upstream project does not support. |
 
 When you report a problem, include `klippy.log` with `logging: True` and
