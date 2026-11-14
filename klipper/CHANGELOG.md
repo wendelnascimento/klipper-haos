@@ -4,7 +4,7 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [0.1.2] - 2026-11-14
 
 ### Added
 
@@ -15,6 +15,12 @@ All notable changes to this app are documented here. The format follows
   an `ender3-v3-se-display` firmware variant: the normal firmware plus a
   serial bridge to the screen. Klipper itself stays at the same upstream
   commit. Not yet tested on hardware. See `docs/display.md`.
+
+### Changed
+
+- Firmware builds now fail if Klipper's configuration step drops a
+  requested option. The standard `ender3-v3-se` firmware is byte-for-byte
+  the same as in 0.1.1.
 
 ## [0.1.1] - 2026-11-11
 
