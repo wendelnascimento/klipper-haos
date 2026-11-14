@@ -119,6 +119,19 @@ Then complete the hardware validation checklist from the project
 documentation. `START_PRINT` refuses to run until you confirm the checklist
 with `MARK_HARDWARE_VALIDATED CONFIRM=YES`.
 
+**Original display (experimental, optional).** The printer's own screen and
+knob can show a Klipper menu. This needs the `ender3-v3-se-display`
+firmware variant from the project's GitHub release and display firmware
+1.0.6 on the screen. Then add this line below the profile include:
+
+```ini
+[include profiles/ender3-v3-se/display.cfg]
+```
+
+With the normal firmware, Klipper stops with
+`Unknown command: serial_bridge_send` while that line is present. Read the
+project's `docs/display.md` before flashing.
+
 ## Backups
 
 The app supports hot backups: Home Assistant backups do not stop a running

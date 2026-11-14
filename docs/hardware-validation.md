@@ -35,3 +35,21 @@ Additional checks recommended before unattended use:
 If a step fails, **stop** and fix the cause before continuing. A failing
 step 4, 6, 9 or 11 means the profile does not match your hardware: report
 it.
+
+## Optional: original display
+
+Only if you use the experimental [original display support](display.md).
+Complete steps 1 to 3 above first.
+
+| # | Step | How | Pass criteria | Result |
+|---|---|---|---|---|
+| D1 | Display firmware variant | Mainsail → Machine → system info | MCU version matches the display variant's `klipper-version.txt` for your app release | ☐ |
+| D2 | Screen starts | Add the `display.cfg` include, `FIRMWARE_RESTART` | Klipper becomes *Ready*; the screen shows the Klipper menu with correct icons | ☐ |
+| D3 | Knob | Turn the knob both ways, short press, long press | The selection moves in the turning direction; press opens the entry | ☐ |
+| D4 | Live values | Heat the bed to 40 °C from Mainsail, watch the screen | The screen shows the same temperatures as Mainsail | ☐ |
+| D5 | Control from the screen | Home all, move each axis 10 mm, preheat, cool down, from the screen | Each action matches what the screen says; nothing moves or heats unexpectedly | ☐ |
+| D6 | Print from the screen | Start the calibration cube from the screen's file list (after step 13 above) | `START_PRINT` runs; pause, resume and stop from the screen work | ☐ |
+| D7 | Reconnect | Unplug and replug USB, then `FIRMWARE_RESTART` | Klipper and the screen come back | ☐ |
+
+Report results for D1 to D7 in the "Printer profile report" issue, with the
+display firmware version.

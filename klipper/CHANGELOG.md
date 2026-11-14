@@ -4,6 +4,18 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Experimental, optional support for the Ender 3 V3 SE's original display
+  and knob, based on the ender3-v3-se-klipper-with-display project by
+  jpcurti. The app bundles its display modules (inactive unless
+  `profiles/ender3-v3-se/display.cfg` is included), and each release adds
+  an `ender3-v3-se-display` firmware variant: the normal firmware plus a
+  serial bridge to the screen. Klipper itself stays at the same upstream
+  commit. Not yet tested on hardware. See `docs/display.md`.
+
 ## [0.1.1] - 2026-11-11
 
 Installed and run on a real Home Assistant OS host for the first time (no

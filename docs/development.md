@@ -8,7 +8,9 @@ klipper-haos/
 ├── klipper/                     the app (slug: klipper)
 │   ├── config.yaml              app manifest (options, ports, ingress, backup)
 │   ├── Dockerfile               3-stage build; all upstream pins live here
-│   ├── requirements/            exact Python constraints + security overrides
+│   ├── requirements/            exact Python constraints + security overrides,
+│   │                            e3v3se-display.lock (pinned display files)
+│   ├── build/                   build-time helper scripts
 │   ├── mainsail/mainsail-settings.json  Mainsail runtime config (served as /config.json)
 │   ├── rootfs/                  copied into the image
 │   │   ├── etc/s6-overlay/      s6-rc services + user bundle
@@ -19,6 +21,8 @@ klipper-haos/
 │   ├── translations/en.yaml     option labels in the HA UI
 │   ├── DOCS.md / README.md / CHANGELOG.md / icon.png / logo.png
 ├── firmware/<printer>/klipper.config   MCU firmware Kconfig fragments
+│                  (ender3-v3-se-display adds the display serial bridge)
+├── firmware/overlays/            build patches for firmware variants
 ├── tests/
 │   ├── static/      ShellCheck, Hadolint, yamllint, s6 tree, secrets
 │   ├── unit/        pytest for the option validator / config generator
@@ -97,6 +101,38 @@ Upstream projects release independently. Never auto-update them.
 Base images and GitHub Actions are proposed by Dependabot. These also need
 a full test run before merging.
 
+## Updating the display support
+
+The optional Ender 3 V3 SE display support ([display.md](display.md)) uses
+files from a third-party Klipper fork. They are listed, with their SHA-256,
+in `klipper/requirements/e3v3se-display.lock`, and fetched at build time by
+`klipper/build/fetch-e3v3se-display.sh`, which also refuses to overwrite
+any upstream Klipper file.
+
+* `klippy/...` entries go into the app image (`klipper/Dockerfile`).
+* `src/...` entries, plus `firmware/overlays/e3v3se-display.patch` (the
+  Kconfig and Makefile lines), are added to upstream Klipper only for the
+  `ender3-v3-se-display` firmware variant. `tools/build-firmware.sh`
+  commits them with a fixed author and date, so the variant is
+  reproducible and its version string names the exact source tree.
+
+To move to a newer fork commit:
+
+1. Read the fork's changes since the pinned commit, at least for the
+   listed files.
+2. Update `commit` in the lock file and recompute every checksum from the
+   fork's Git objects (not from a Windows checkout, whose line endings may
+   differ): `git show <commit>:<path> | sha256sum`.
+3. Check that the fork's Klipper API use still matches the upstream commit
+   in the Dockerfile, especially `mcu.register_serial_response`,
+   `virtual_sdcard`, `manual_probe` and `buttons`.
+4. Run all test layers, including both firmware builds and the
+   `display.cfg` profile check, and update `THIRD_PARTY_NOTICES.md`, the
+   changelog and the expected MCU version in `display.md`.
+
+A Klipper bump also changes the display variant. Rebuild it and confirm
+`git apply` of the overlay patch still succeeds.
+
 ## Releasing
 
 1. Update `version` in `klipper/config.yaml` and add a
@@ -111,8 +147,8 @@ a full test run before merging.
      multi-arch manifest `ghcr.io/<owner>/klipper-haos:X.Y.Z` with the
      official Home Assistant builder actions. Images are cosign-signed by
      the builder. There is no `latest` tag;
-   * builds the matching Ender 3 V3 SE firmware and attaches it with
-     checksums to a GitHub pre-release.
+   * builds the matching Ender 3 V3 SE firmware (standard and display
+     variant) and attaches it with checksums to a GitHub pre-release.
 4. Make the GHCR package **public**: *Package settings → Change
    visibility*. This is needed once, for the first release.
 

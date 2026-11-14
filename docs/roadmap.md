@@ -44,6 +44,7 @@ are checked only when they are done **and** verified as described.
 * More printer profiles (community contributions)
 * Ender 3 V3 SE pressure sensor (strain gauge) Z-offset, if upstream Klipper
   support becomes available
-* Original display support (community projects)
+* Original display: validate on hardware (experimental support exists,
+  see display.md); a custom screen layout on top of it
 * Optional numpy for accelerometer-based input shaper calibration
 * Webcam support (resource impact must be measured first)

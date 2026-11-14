@@ -72,6 +72,10 @@ The firmware **must match the Klipper host version in the app**. Use one of:
   `klipper.bin.sha256`, the full `.config` and `klipper.dict`. The build is
   reproducible, so two builds of the same commit give the same SHA-256.
 
+To use the printer's **original display** (experimental), flash the
+`ender3-v3-se-display` variant instead. It is the same firmware plus a
+serial bridge for the screen. See [display.md](display.md) first.
+
 Never compile firmware on the Home Assistant machine.
 
 ## 4. Prepare the firmware file
@@ -91,8 +95,9 @@ ready to run the printer with Klipper.
 1. Switch the printer off. Insert the microSD card.
 2. Switch the printer on. The bootloader flashes the file; wait about one
    minute.
-3. **The original display stays blank or frozen.** This is expected: it is
-   not supported by Klipper.
+3. **The original display stays blank or frozen.** This is expected with
+   the standard firmware. The experimental display variant shows a menu
+   only after you enable it, see [display.md](display.md).
 4. Switch the printer off, remove the card, and keep it as proof of what was
    flashed.
 
@@ -164,7 +169,9 @@ case comment out the `[include drivers-tmc2208.cfg]` line in
 
 ### Not supported in this profile
 
-* **Original display:** not supported. Use Mainsail.
+* **Original display:** optional and experimental, with a firmware variant
+  and `display.cfg`. See [display.md](display.md). Mainsail works with or
+  without it.
 * **Pressure sensor (strain gauge) automatic Z-offset:** not supported in
   v1.0 and needs a forked Klipper. Use the CR Touch and manual Z-offset.
 * **Filament runout sensor:** not configured. Contributions are welcome

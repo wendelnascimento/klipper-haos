@@ -12,6 +12,7 @@ own license; the MIT license does not replace or override any of them.
 | Klipper (host software, `klippy`) | commit `29d4ec2d6d84` (`v0.13.0-827-g29d4ec2d`) | GPL-3.0 | https://github.com/Klipper3d/klipper |
 | Moonraker | `v0.11.0` (commit `985c1d0bbeb9`) | GPL-3.0-only | https://github.com/Arksine/moonraker |
 | Mainsail (built from source) | `v2.19.0` (commit `5fb9e77fb9f4`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail |
+| Ender 3 V3 SE display modules (`e3v3se_display`, `TJC3224`, `printerInterface`, `serial_bridge` in `klippy/extras`) | commit `d74d36bb69bd` of the fork, files listed with SHA-256 in `klipper/requirements/e3v3se-display.lock` | GPL-3.0 | https://github.com/jpcurti/ender3-v3-se-klipper-with-display |
 | mainsail-config (client macros) | `v1.2.1` (commit `e57810d51b5c`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail-config |
 | Home Assistant base image (Alpine, s6-overlay, bashio, tempio) | `base-python:3.13-alpine3.23` (digest pinned in the Dockerfile) | Apache-2.0 (image tooling), plus the licenses of the Alpine packages it contains | https://github.com/home-assistant/docker-base |
 | nginx | Alpine package (1.28.x) | BSD-2-Clause | https://nginx.org |
@@ -23,7 +24,7 @@ and printed in the app log at every start.
 
 ## GPL-3.0 obligations
 
-Klipper, Moonraker, Mainsail and mainsail-config are licensed under the GNU
+Klipper, Moonraker, Mainsail, mainsail-config and the display modules are licensed under the GNU
 General Public License version 3. Distributing the app image means
 distributing these programs, so the project:
 
@@ -60,6 +61,14 @@ Firmware files attached to GitHub releases (`*-klipper.bin`) are compiled
 from the Klipper source at the commit listed above (GPL-3.0) using
 `tools/build-firmware.sh` and the configuration in `firmware/`. The source
 for every binary is that Klipper commit plus the configuration file.
+
+The `ender3-v3-se-display-*` variant additionally contains the serial bridge
+from the ender3-v3-se-klipper-with-display fork (GPL-3.0, by jpcurti, based
+on Klipper code by Kevin O'Connor): the `src/` files listed in
+`klipper/requirements/e3v3se-display.lock`, at the commit given there, and
+the build lines in `firmware/overlays/e3v3se-display.patch` (GPL-3.0). Its
+complete corresponding source is the upstream Klipper commit plus those
+files and that patch.
 
 ## Printer profiles
 

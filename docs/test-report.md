@@ -3,6 +3,29 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## Original display support (unreleased) — 2026-11-14
+
+Environment: Windows 11 development PC, Docker Desktop (Engine 29.9.3,
+amd64). **No printer and no display connected.** Command:
+`tools/verify-all.sh`, plus the release workflow's firmware step run as an
+unprivileged user (uid 1001) in an Ubuntu container, as on a CI runner.
+
+| Check | Result |
+|---|---|
+| All test layers (`tools/verify-all.sh`) | **Pass**: image build, static validation, 49 unit tests, both firmware builds, both profile checks, integration tests 43/43 |
+| Display files fetched from the pinned fork commit, SHA-256 verified | **Pass**: 4 host modules in the image, 5 firmware sources in the variant; no upstream file replaced |
+| `ender3-v3-se-display` firmware build | **Pass**: version `v0.13.0-828-ge4befa2e`; dictionary contains `serial_bridge_send`, `serial_bridge_response` and `SERIAL_BRIDGE_CONFIG_USART2_PA3,PA2=3`. Reproducible: two builds gave the same SHA-256 `0df7b38e9a7c604a2069ed967b4d8a862c0ff517ac02be1de5e9aa323682eafb` |
+| Standard firmware unchanged | **Pass**: SHA-256 still `7cf49e4cdca3a6a7d49dd1e7a6e6377922dee88476e6b7f8c63ad07c8aecfe69` |
+| Profile + `display.cfg` with the display firmware dictionary (Klipper batch mode) | **Pass**: config loads, motion/heater G-code runs, `START_PRINT` gate blocks and then allows |
+| Commands Klipper sends to the simulated MCU (decoded with `klippy/parsedump.py`) | **Pass**: serial bridge configured with `config=3 baud=115200`; knob buttons on PA12, PA11, PB1 with pull-ups |
+| Profile + `display.cfg` with the standard firmware | **Pass** (expected failure): Klipper stops with `Unknown command: serial_bridge_send` |
+| Default install: `display.cfg` installed but not included; modules present | **Pass** (integration test) |
+
+Not covered: anything with the real display or printer. The simulated MCU
+never answers, so no drawing commands were exercised. Whether the screen
+shows the menu, the knob works and the display firmware version matches is
+unknown until the hardware checklist's display steps are done.
+
 ## v0.1.1 release — 2026-11-11
 
 The v0.1.1 tag ran the release workflow on GitHub Actions. Before tagging,

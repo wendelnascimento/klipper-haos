@@ -35,6 +35,8 @@ configured yet.*
   heaters until you choose a printer profile.
 * **Ender 3 V3 SE profile** with a hardware validation checklist and a print
   safety gate.
+* Optional, experimental support for the Ender 3 V3 SE's **original
+  display** and knob ([docs/display.md](docs/display.md)).
 * Reproducible **MCU firmware builds** that match the bundled Klipper
   version exactly. Firmware is never flashed automatically.
 * Pinned and verified upstream versions. Releases are published to GHCR
@@ -58,7 +60,8 @@ configured yet.*
 | USB serial connection to a real printer | **Not yet tested** |
 | Ender 3 V3 SE on real hardware (motion, heaters, probe, printing) | **Not yet tested** |
 | aarch64 (Raspberry Pi, ODROID, Green, Yellow) | **Planned** |
-| Original Creality display, pressure-sensor Z-offset, camera, timelapse | **Planned / not supported** |
+| Original Ender 3 V3 SE display (firmware variant + `display.cfg`) | **Experimental**: builds and loads in tests (Klipper batch mode); not yet tested on hardware |
+| Pressure-sensor Z-offset, camera, timelapse | **Planned / not supported** |
 
 ## Requirements
 
@@ -154,8 +157,10 @@ the printer is not touched. To go back to the stock firmware, see
 * Moonraker system actions (reboot or shut down the host, restart services)
   are not available from Mainsail. Use Home Assistant to restart the app.
 * No webcam, timelapse, or AI failure detection in this release.
-* The original Creality display and the Ender 3 V3 SE pressure-sensor
-  Z-offset are not supported. Use Mainsail and the CR Touch.
+* The Ender 3 V3 SE pressure-sensor Z-offset is not supported. Use the
+  CR Touch.
+* Support for the original Ender 3 V3 SE display is experimental and needs
+  a separate firmware variant. Mainsail remains the main interface.
 * Services run as root inside the container. A custom AppArmor profile is
   not shipped yet.
 
