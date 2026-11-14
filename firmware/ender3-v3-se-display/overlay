@@ -1,0 +1,3 @@
+# Source overlay applied on top of upstream Klipper before building:
+# klipper/requirements/<name>.lock (src/ files) and firmware/overlays/<name>.patch.
+e3v3se-display

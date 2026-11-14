@@ -1,0 +1,59 @@
+SPDX-License-Identifier: GPL-3.0-only
+
+Build-system part of the serial bridge from the
+"ender3-v3-se-klipper-with-display" Klipper fork by jpcurti (commit
+d74d36bb69bd8c561a169fd99e8c83e254318562), reduced to the serial bridge
+only. Applied with "git apply" on top of the upstream Klipper commit pinned
+in klipper/Dockerfile by tools/build-firmware.sh. The C sources it builds
+come from the same fork commit, see klipper/requirements/e3v3se-display.lock.
+
+diff --git a/src/Makefile b/src/Makefile
+index 90466f6..32c1510 100644
+--- a/src/Makefile
++++ b/src/Makefile
+@@ -1,6 +1,7 @@
+ # Main code build rules
+ 
+ src-y += sched.c command.c basecmd.c debugcmds.c
++src-$(CONFIG_SERIAL_BRIDGE) += serial_bridge.c
+ src-$(CONFIG_HAVE_GPIO) += initial_pins.c gpiocmds.c stepper.c endstop.c \
+     trsync.c
+ src-$(CONFIG_WANT_ADC) += adccmds.c
+diff --git a/src/stm32/Kconfig b/src/stm32/Kconfig
+index e9aa087..08a461a 100644
+--- a/src/stm32/Kconfig
++++ b/src/stm32/Kconfig
+@@ -528,6 +528,21 @@ choice
+         depends on HAVE_STM32_FDCANBUS
+ endchoice
+ 
++config SERIAL_BRIDGE
++    bool "Enable serial bridge" if LOW_LEVEL_OPTIONS
++    depends on MACH_STM32
++    default n
++
++config ENABLE_SERIAL_BRIDGE_USART1
++    bool "USART1" if SERIAL_BRIDGE && !(STM32_SERIAL_USART1 || STM32_SERIAL_USART1_ALT_PB7_PB6)
++    depends on SERIAL_BRIDGE
++config ENABLE_SERIAL_BRIDGE_USART2
++    bool "USART2" if SERIAL_BRIDGE && !(STM32_SERIAL_USART2 || STM32_SERIAL_USART2_ALT_PA15_PA14 || STM32_SERIAL_USART2_ALT_PB4_PB3 || STM32_SERIAL_USART2_ALT_PD6_PD5)
++    depends on SERIAL_BRIDGE
++config ENABLE_SERIAL_BRIDGE_USART6
++    bool "USART6" if SERIAL_BRIDGE
++    depends on SERIAL_BRIDGE
++
+ 
+ config STM32_CANBUS_PB8_PB9
+     bool
+diff --git a/src/stm32/Makefile b/src/stm32/Makefile
+index 3c158d5..aaac5d2 100644
+--- a/src/stm32/Makefile
++++ b/src/stm32/Makefile
+@@ -89,6 +89,7 @@ src-$(CONFIG_USBCANBUS) += $(usb-src-y) $(canbus-src-y)
+ src-$(CONFIG_USBCANBUS) += stm32/chipid.c generic/usb_canbus.c
+ src-$(CONFIG_WANT_HARD_PWM) += stm32/hard_pwm.c
+ src-$(CONFIG_HAVE_GPIO_SDIO) += stm32/sdio.c
++src-$(CONFIG_SERIAL_BRIDGE) += stm32/serial_bridge.c generic/serial_bridge_irq.c
+ 
+ # Binary output file rules
+ target-y += $(OUT)klipper.bin

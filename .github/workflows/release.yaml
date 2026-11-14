@@ -134,14 +134,19 @@ jobs:
 
       - name: Build firmware (matches the released Klipper commit)
         run: |
-          bash tools/build-firmware.sh ender3-v3-se dist/ender3-v3-se
-          cd dist/ender3-v3-se
           version="${{ needs.prepare.outputs.version }}"
-          for f in klipper.bin klipper.dict klipper.config.full; do
-            mv "$f" "ender3-v3-se-${version}-${f}"
+          mkdir -p dist/release
+          # ender3-v3-se-display adds the serial bridge for the original
+          # display (experimental); see firmware/ender3-v3-se-display/.
+          for variant in ender3-v3-se ender3-v3-se-display; do
+            bash tools/build-firmware.sh "${variant}" "dist/${variant}"
+            for f in klipper.bin klipper.dict klipper.config.full klipper-version.txt; do
+              mv "dist/${variant}/${f}" "dist/release/${variant}-${version}-${f}"
+            done
+            (cd dist/release && sha256sum "${variant}-${version}-"klipper* \
+              > "${variant}-${version}-SHA256SUMS")
           done
-          sha256sum ender3-v3-se-* > "ender3-v3-se-${version}-SHA256SUMS"
-          rm -f klipper.bin.sha256
+          ls -l dist/release
 
       - name: Extract release notes from the changelog
         run: |
@@ -155,6 +160,9 @@ jobs:
             echo
             echo "### Firmware"
             echo "Ender 3 V3 SE Klipper MCU firmware built from the same Klipper commit as this release."
+            echo "- \`ender3-v3-se-*\`: standard firmware."
+            echo "- \`ender3-v3-se-display-*\`: experimental, adds the serial bridge for the original display" \
+              "(see docs/display.md)."
             echo "Read docs/printer-setup.md before flashing. Flashing is never automatic."
           } >> release-notes.md
 
@@ -166,4 +174,4 @@ jobs:
             --title "Klipper HAOS ${GITHUB_REF_NAME}" \
             --notes-file release-notes.md \
             --prerelease \
-            dist/ender3-v3-se/*
+            dist/release/*

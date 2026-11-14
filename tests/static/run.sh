@@ -22,7 +22,7 @@ step() { echo; echo "== $*"; }
 
 step "ShellCheck"
 mapfile -t scripts < <(cd "${ROOT}" && grep -rl --include='*' -E '^#!.*(bash|bashio|/bin/sh)' \
-    klipper/rootfs tests tools 2>/dev/null | sort)
+    klipper/rootfs klipper/build tests tools 2>/dev/null | sort)
 scripts+=("klipper/rootfs/usr/local/lib/klipper-haos/common.sh")
 if docker run --rm -v "${SRC}:/mnt:ro" -w /mnt "${SHELLCHECK_IMAGE}" \
     --shell=bash --external-sources --source-path=SCRIPTDIR "${scripts[@]}"; then

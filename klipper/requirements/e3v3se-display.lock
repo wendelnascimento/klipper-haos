@@ -1,0 +1,26 @@
+# Support for the original Creality Ender 3 V3 SE display (experimental).
+#
+# Source: the "ender3-v3-se-klipper-with-display" Klipper fork by jpcurti
+# (GPL-3.0). Klipper itself stays at the upstream commit pinned in the
+# Dockerfile. Only the files listed below are taken from the fork, at exactly
+# this commit, and the build fails if any checksum differs.
+#
+#   klippy/  host modules, installed into the app image (inert unless
+#            [e3v3se_display] is in printer.cfg)
+#   src/     MCU serial bridge, used only by the "ender3-v3-se-display"
+#            firmware variant (firmware/ender3-v3-se-display/)
+#
+# Not taken from the fork: its other Klipper changes (pressure sensor
+# modules, gcode_move and stepper edits). See docs/development.md
+# ("Updating the display support") before changing this file.
+repo https://github.com/jpcurti/ender3-v3-se-klipper-with-display.git
+commit d74d36bb69bd8c561a169fd99e8c83e254318562
+4fb1792d2ccd4dc831fab96868da0d2686483e89483c52510069429a3cd3b3c8  klippy/extras/e3v3se_display.py
+5d6008e1c10b8970bc227939eaabaaf8f9643eda947d4ebbff6f0eb15654ed1f  klippy/extras/TJC3224.py
+17a7de01afe2496c10e940f8822decd886d64391193b5865f53914d26ef59f9c  klippy/extras/printerInterface.py
+e739ff329f7cee4c204de2c4d8a2461b2adfa75a09fd31de6bceb693d1b710d4  klippy/extras/serial_bridge.py
+439cfd87fab23b2129e32c3359861ee2f38cc26515e76d5826ace6187abdf980  src/serial_bridge.c
+8a010c7c46b8afdcfc45c8cc1193d5d16cefa9c41adedae002aa1896668b5f44  src/generic/serial_bridge_irq.c
+c97993a25d59d715ccb6e28fc48146a0857f6ef839e6a4ada0a98aa905f907f6  src/generic/serial_bridge_irq.h
+6a45920c9ceb97976e759fbacd183ca8d768cdc88e80c389abafce7a784ba70e  src/stm32/serial_bridge.c
+d38acc08fdc1c220cef22d686568a974687c84f7384543304550470dc65ca9b8  src/stm32/serial_bridge.h
