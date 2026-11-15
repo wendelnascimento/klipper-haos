@@ -158,6 +158,46 @@ Things the profile deliberately leaves unsafe-to-print until you calibrate:
 * Motion limits are below the stock firmware's limits (200 mm/s,
   2000 mm/s²).
 
+### Filament change and purge macros
+
+`profiles/ender3-v3-se/filament.cfg` (included by the profile's
+`printer.cfg`) adds:
+
+| Command | What it does |
+|---|---|
+| `LOAD_FILAMENT [TEMP=] [LENGTH=] [PURGE=]` | Heats, feeds the filament to the nozzle (40 mm) and purges 30 mm |
+| `UNLOAD_FILAMENT [TEMP=] [LENGTH=]` | Heats, softens the tip, then pulls the filament out of the gears (60 mm in total) |
+| `PURGE [TEMP=] [LENGTH=]` | Heats and extrudes 30 mm. Raises a homed nozzle to at least 10 mm first |
+| `M600 [X..] [Y..] [Z..]` | Filament change during a print: `PAUSE`, park at least 50 mm above the bed, unload |
+
+Without `TEMP` they use the current nozzle target, or 220 °C when the
+nozzle is off. They refuse to run during a print that is not paused, and
+leave the nozzle hot afterwards (`idle_timeout` turns it off after 30
+minutes). `M600` is a classic G-code command, so its parameters have no
+`=`: `M600 X10 Y10 Z60`.
+
+**Filament change during a print:** in OrcaSlicer set *Printer settings →
+Machine G-code → Change filament G-code* to `M600`, then add a colour
+change at a layer in the preview. When the printer stops, insert the new
+filament, run `LOAD_FILAMENT` (and `PURGE` until the colour is clean),
+remove the purged strand and press *Resume*. Finish within 30 minutes: when
+`idle_timeout` turns the motors off the printer loses its position, and the
+print cannot be resumed.
+
+**Adjusting:** the lengths are starting values. Copy the
+`[gcode_macro _KHAOS_FILAMENT_SETTINGS]` section from `filament.cfg` into
+`/config/printer.cfg`, below the profile include, and change the values
+there.
+
+**Profiles installed by an earlier app version:** the app adds `filament.cfg` to your
+existing profile folder, but does not change your copy of the profile's
+`printer.cfg`. Add the line yourself in
+`/config/profiles/ender3-v3-se/printer.cfg`, below `[include macros.cfg]`:
+
+```ini
+[include filament.cfg]
+```
+
 ### Stepper drivers
 
 `profiles/ender3-v3-se/drivers-tmc2208.cfg` configures the X, Y and Z

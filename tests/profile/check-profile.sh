@@ -72,6 +72,23 @@ path: /tmp/gcodes
 [include profiles/${PRINTER}/printer.cfg]
 ${includes}[mcu]
 serial: /dev/null
+
+# Test-only assertions for the G-code files.
+[gcode_macro _TEST_ASSERT_Z_MIN]
+gcode:
+    {% if printer.toolhead.position.z < params.Z|float %}
+        {action_raise_error('assert: z=%.2f < %s' % (printer.toolhead.position.z, params.Z))}
+    {% endif %}
+[gcode_macro _TEST_ASSERT_E]
+gcode:
+    {% if (printer.toolhead.position.e - params.E|float)|abs > 0.01 %}
+        {action_raise_error('assert: e=%.2f != %s' % (printer.toolhead.position.e, params.E))}
+    {% endif %}
+[gcode_macro _TEST_ASSERT_PAUSED]
+gcode:
+    {% if printer.pause_resume.is_paused != (params.VALUE|int == 1) %}
+        {action_raise_error('assert: is_paused=%s' % printer.pause_resume.is_paused)}
+    {% endif %}
 EOF
             rc=0
             /opt/venv/klippy/bin/python /opt/klipper/klippy/klippy.py \
@@ -103,6 +120,13 @@ run_case "config loads and basic motion/heater G-code runs" basic.gcode ok || fa
 run_case "START_PRINT is blocked before hardware validation" start-print-gate.gcode error \
     "Error evaluating 'gcode_macro START_PRINT:gcode': gcode.CommandError: START_PRINT blocked" || failed=1
 run_case "START_PRINT runs after MARK_HARDWARE_VALIDATED" start-print-validated.gcode ok || failed=1
+run_case "filament macros: load, purge, unload, M600 and RESUME" filament.gcode ok || failed=1
+run_case "LOAD_FILAMENT refuses a temperature below min_extrude_temp" filament-cold.gcode error \
+    "LOAD_FILAMENT: TEMP must be between 170 and 260" || failed=1
+run_case "filament moves longer than max_extrude_only_distance are refused" filament-too-long.gcode error \
+    "exceeds max_extrude_only_distance" || failed=1
+run_case "M600 refuses parameters it cannot parse" filament-m600-syntax.gcode error \
+    "M600: use numbers" || failed=1
 if [[ -n "${NEG_FW_DIR}" ]]; then
     [[ -f "${NEG_FW_DIR}/klipper.dict" ]] || { echo "Missing ${NEG_FW_DIR}/klipper.dict" >&2; exit 1; }
     run_case "Klipper refuses to start with firmware $(cat "${NEG_FW_DIR}/klipper-version.txt") (no serial bridge)" \

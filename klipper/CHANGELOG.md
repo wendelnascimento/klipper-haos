@@ -4,6 +4,16 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- Ender 3 V3 SE profile: `LOAD_FILAMENT`, `UNLOAD_FILAMENT`, `PURGE` and
+  `M600` (filament change during a print) in the new
+  `profiles/ender3-v3-se/filament.cfg`. Not yet tested on hardware.
+  Existing installs get the file but must add `[include filament.cfg]` to
+  their copy of the profile's `printer.cfg` (see `docs/printer-setup.md`).
+
 ## [0.1.2] - 2026-11-14
 
 ### Added

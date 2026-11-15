@@ -27,6 +27,10 @@ template. **Only report a step as passed if you actually performed it.**
 Additional checks recommended before unattended use:
 
 * Rotation distance of the extruder (extrude 100 mm, measure).
+* Filament macros: `UNLOAD_FILAMENT`, then `LOAD_FILAMENT`, then `PURGE`
+  with the head homed and mid-bed. The filament comes out of the gears,
+  goes back in without grinding, and new filament flows from the nozzle.
+  Then a test print with one `M600` colour change that you resume.
 * `SCREWS_TILT_CALCULATE` for bed levelling.
 * Input shaper tuning (ringing tower) before raising speed limits.
 * Restart Home Assistant while the printer is idle and confirm Klipper
