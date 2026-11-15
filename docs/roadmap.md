@@ -14,11 +14,16 @@ are checked only when they are done **and** verified as described.
 
 ## v0.2.0 — Hardware validation
 
-- [ ] Printer USB connectivity on real HAOS (`uart` mapping, by-id path, re-plug)
+- [ ] Printer USB connectivity on real HAOS (`uart` mapping and by-id path
+  verified; re-plug while on pending)
 - [ ] Ender 3 V3 SE: complete the [hardware validation checklist](hardware-validation.md)
 - [ ] Determine driver chip variants (TMC2208 / MS35774) and adjust the profile
-- [ ] Measured CPU and RAM usage on the target Celeron, idle and printing
-- [ ] Verified firmware flashing and recovery procedure
+  (one board works with TMC2208 UART)
+- [ ] Fix the profile so `SAVE_CONFIG` can store Z-offset and PID
+- [x] Measured CPU and RAM usage on the target Celeron, idle and printing
+  (idle 55.5 MiB; printing 67 MiB, under 3 % CPU)
+- [ ] Verified firmware flashing and recovery procedure (flashing verified;
+  recovery to stock pending)
 
 ## v0.3.0 — Integration and reliability
 
@@ -27,7 +32,7 @@ are checked only when they are done **and** verified as described.
 - [ ] Home Assistant backup → restore cycle verified (backup contents checked)
 - [ ] App update and rollback verified; data persists (update 0.1.0 → 0.1.1
   verified with data kept; rollback pending)
-- [ ] Client IP preservation on the published port (for `trusted_networks`)
+- [x] Client IP preservation on the published port (for `trusted_networks`)
 - [ ] Custom AppArmor profile (complain-mode audit on real HAOS)
 - [ ] Optional non-root service user
 

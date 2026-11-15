@@ -36,18 +36,24 @@ Slicers connect to Moonraker directly, not through Home Assistant.
    `moonraker.apikey` in the app config folder (Samba / File editor apps, or
    Mainsail → *Machine*). Then **disable `export_api_key` again** and
    restart; the file is removed.
-3. OrcaSlicer: *Printer settings → Physical printer → Host type: Klipper
-   (via Moonraker)*, host `http://<home-assistant-ip>:7125`, and the API key
-   if the dialog has a field for it.
+3. OrcaSlicer: *Printer settings → Physical printer*, host type
+   *Octo/Klipper*, host `http://<home-assistant-ip>:7125`, and the API key.
+   Use the IP address, not `homeassistant.local`: on Windows the name can
+   resolve to an IPv6 link-local address first, and the connection fails.
+4. In the printer's *Machine G-code*, set the start G-code to
+   `START_PRINT BED_TEMP=[bed_temperature_initial_layer_single] EXTRUDER_TEMP=[nozzle_temperature_initial_layer]`
+   and the end G-code to `END_PRINT`. Otherwise OrcaSlicer's own start code
+   heats and homes as well.
 
-Alternatively, add your PC's address to `trusted_networks`, for example
+The API key is enough to upload and start prints. OrcaSlicer's *Device*
+tab shows Mainsail, and on real HAOS its WebSocket was not authorised with
+the key alone. For that tab,
+add your PC's address to `trusted_networks`, for example
 `192.168.1.50/32`. Clients from that address need no key. Only do this on a
-network you trust.
+network you trust; give the PC a fixed address in your router.
 
-> Unverified on real HAOS: whether the client address seen by the app
-> through the published port is the real LAN address. If it is not, the
-> `trusted_networks` option has no effect (it fails closed, so clients still
-> need the key). Please report your findings.
+Verified on real HAOS: the app sees the real LAN address of clients on the
+published port, so `trusted_networks` works there.
 
 ## Home Assistant integration
 

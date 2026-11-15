@@ -3,6 +3,104 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## Real printer: Ender 3 V3 SE on Home Assistant OS — 2026-11-14 to 2026-11-15
+
+Environment: the target host from the runs below (HAOS 18.2, 2 CPU cores,
+3.7 GiB RAM), apps 0.1.1 to 0.1.3, and the maintainer's Creality Ender 3
+V3 SE (MCU `stm32f103xe`), stock wiring and stock display, over USB. The
+app's `serial_device` is the printer's `/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0`,
+not the host's Zigbee coordinator.
+
+Two kinds of evidence, kept apart below:
+
+* **Observed:** read from the running system through the Moonraker and
+  Supervisor APIs: Klipper status, saved configuration, the Moonraker job
+  history and the Klipper logs (`klippy.log` and the 2026-11-14 rotation).
+* **Reported:** what the maintainer saw at the printer and told us. Not
+  checked by a second person.
+
+### Firmware, connection and calibration
+
+| Check | Evidence | Result |
+|---|---|---|
+| Standard firmware flashed (SD card, as in [printer setup](printer-setup.md)) | Observed: MCU `v0.13.0-827-g29d4ec2d`, the release build, matching the host | **Pass** |
+| Display variant flashed later | Observed: MCU `v0.13.0-828-ge4befa2e` (146 MCU commands instead of 143), Klipper *ready* | **Pass** |
+| USB serial connection through `uart: true` and the by-id path | Observed: Klipper *ready* on every start in the logs | **Pass** |
+| Reconnect after the printer was switched off | Observed: "Lost communication with MCU" at the time the printer was switched off to flash the variant (reported), then a normal start with the new firmware | **Pass** (USB unplug and replug while on: not tested) |
+| Stepper drivers over UART as TMC2208 | Observed: the three `tmc2208` sections load and Klipper reaches *ready*; it stops at start-up if a driver does not answer | **Pass** on this board (revision not recorded) |
+| Z-offset, PID, bed mesh | Observed in the `SAVE_CONFIG` block: `z_offset` 1.820, PID for extruder and bed, a 5 × 5 mesh with a range of 0.63 mm | **Done** (calibrated by the maintainer) |
+| `MARK_HARDWARE_VALIDATED CONFIRM=YES` | Observed: `khaos_hw_validated` is `true` | Set by the maintainer. The individual checklist steps were not recorded for this report |
+
+**Profile problem found:** `SAVE_CONFIG` cannot store the Z-offset or PID
+values while the profile sets them. Klipper refuses to save an option that
+an included file defines (`_disallow_include_conflicts` in
+`klippy/configfile.py`). The maintainer commented out `control`, `pid_Kp`,
+`pid_Ki`, `pid_Kd` and `z_offset` in their copy of the profile's
+`printer.cfg`. That works for them only because the saved block already
+holds those values; on a fresh install Klipper would not start without
+them. The shipped profile is unchanged so far.
+
+### Prints
+
+Source: the Moonraker job history (observed). The file metadata shows
+OrcaSlicer 2.5.0 for every job; the maintainer sent the jobs from
+OrcaSlicer through the direct port (reported).
+
+| Job | Print time (Moonraker) | Slicer estimate | Filament | Result |
+|---|---|---|---|---|
+| Calibration cube | 2 min | 2 min | 0.1 m | **Completed** |
+| Large part, `…tool bases…` | **18 h 0 min** (18 h 4 min including heating) | 16 h 20 min | 114 m | **Completed**; reported flawless |
+| Pressure advance pattern (2 runs) | 10 and 8 min | 9 and 7 min | 0.6 and 0.5 m | **Completed** |
+
+From the Klipper logs (observed) for these prints:
+
+* No MCU shutdown, `Timer too close` or lost communication while printing.
+* `bytes_invalid=0` throughout, and at most 9 retransmitted bytes over
+  about 195 MB sent.
+* `print_stall=0` for the 18-hour print. One stall (`print_stall=1`)
+  during the second pressure advance pattern, right after Klipper dropped
+  a G-code response line it could not write (`BlockingIOError` on its
+  pseudo-terminal). The print completed.
+* The original display was active from the 18-hour print on. Klipper
+  reported its update loop holding the main loop for up to 0.125 s (733
+  "Reactor busy" reports in the current log), with no print stall during
+  the 18-hour print.
+
+### Resource use on the target host
+
+Supervisor statistics, three samples 10 s apart, with a print running and
+the display active (0.1.3): **66.8 to 67.1 MiB RAM**, **2.3 to 2.8 % CPU**.
+At idle on the same host without a printer: 55.5 MiB and 0.2 % (0.1.1, see
+below).
+
+### Original display
+
+| Step | Evidence | Result |
+|---|---|---|
+| D1 display firmware variant | Observed (see above) | **Pass** |
+| D2 screen starts | Reported: the screen is functional | **Pass** (reported) |
+| Remaining time during a print | Reported: it differs from Mainsail's | Expected with the upstream module; see [display.md](display.md#remaining-time-on-the-screen) |
+| Macros menu | Reported: it showed "No macros" | No menu entries were configured. 0.1.3 adds three; Klipper loads them (observed). Not yet confirmed on the screen |
+| D3 to D7 (knob, live values, control, print from the screen, reconnect) | Not reported individually | **Not recorded** |
+
+### OrcaSlicer and the direct port
+
+| Check | Evidence | Result |
+|---|---|---|
+| Port 7125 mapped; upload and print from OrcaSlicer | Observed (job history) and reported | **Pass** |
+| Host name `homeassistant.local` from the Windows PC | Observed: it resolves to an IPv6 link-local address first, which OrcaSlicer cannot connect to | **Fail**: use the IP address |
+| Real client address on the published port | Observed: Moonraker sees the PC's LAN address (192.168.68.65), not a Docker address | **Pass**, so `trusted_networks` works on HAOS |
+| `trusted_networks: ["192.168.68.65/32"]` | Observed from that PC: HTTP API (200), Mainsail (200) and the WebSocket (`printer.info`: ready) without a key | **Pass** |
+| OrcaSlicer's *Device* tab (embedded Mainsail) | Observed in the Moonraker log: with only the API key its WebSocket is not authorised; with `trusted_networks` it connects (reported) | Needs `trusted_networks` |
+
+### Not tested in this run
+
+The filament macros added in 0.1.3 (`LOAD_FILAMENT`, `UNLOAD_FILAMENT`,
+`PURGE`, `M600`) are loaded but have not been run on the printer. Also not
+tested: USB unplug and replug while the printer is on, recovery to the
+stock Creality firmware, input shaper, and the individual steps of the
+hardware validation checklist (see above).
+
 ## Original display support (unreleased) — 2026-11-14
 
 Environment: Windows 11 development PC, Docker Desktop (Engine 29.9.3,
@@ -172,15 +270,16 @@ Mainsail opened in a real browser through the simulated ingress path
 connected, Klipper's live status was shown, and the config file browser
 listed the seeded files. See the screenshot in the README.
 
-## Not tested yet (requires real hardware or real HAOS)
+## Not tested yet
 
 | Requirement | Why not yet | Milestone |
 |---|---|---|
 | Mainsail panel in a browser inside the Home Assistant frontend (including remote access) | Real ingress was tested by script only (see the 2026-11-11 run) | v0.3.0 |
-| Printer serial connection, USB re-plug | Needs the printer (`uart` and by-id were confirmed on HAOS) | v0.2.0 |
+| USB unplug and replug while the printer is on | Not done yet (connection and reconnect after power-off: see the real printer run) | v0.2.0 |
 | Restore from a Home Assistant backup, rollback to an older app version | Not run yet (update and backup creation were tested, see the update run) | v0.3.0 |
-| Client IP preservation on the published port (`trusted_networks`) | Depends on the HAOS Docker configuration | v0.3.0 |
 | Supervisor watchdog restarting an unhealthy app | Needs HAOS | v0.3.0 |
-| Resource usage on the target Celeron host, idle and printing | Needs the target hardware | v0.2.0 |
-| Every step of the [hardware validation checklist](hardware-validation.md) | Needs the printer | v0.2.0 |
-| Firmware flashing and recovery on an Ender 3 V3 SE | Needs the printer | v0.2.0 |
+| Resource usage over a whole long print | One printing sample so far (67 MiB, under 3 % CPU) | v0.2.0 |
+| Every step of the [hardware validation checklist](hardware-validation.md), recorded | `MARK_HARDWARE_VALIDATED` was run on one printer, but the step results were not recorded | v0.2.0 |
+| Recovery to the stock Creality firmware | Flashing Klipper worked (both variants); going back to stock has not been tested | v0.2.0 |
+| Filament macros (`LOAD_FILAMENT`, `UNLOAD_FILAMENT`, `PURGE`, `M600`) on the printer | Added in 0.1.3, batch-mode tests only | v0.2.0 |
+| `SAVE_CONFIG` with the shipped profile | Klipper refuses to save Z-offset and PID while the profile sets them (see the real printer run) | v0.2.0 |

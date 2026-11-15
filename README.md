@@ -9,8 +9,10 @@ unmanaged Docker containers. The Home Assistant Supervisor installs,
 updates, backs up and supervises it like any other app.
 
 > **Status: experimental (v0.1.3).** The app is tested automatically in
-> containers and has been installed and run on a real Home Assistant OS
-> host, but it has **not yet been validated with real printer hardware**. Read
+> containers and runs on a real Home Assistant OS host. It has driven one
+> Ender 3 V3 SE through real prints, the longest 18 hours (see the
+> [test report](docs/test-report.md)). That is one printer, and the
+> hardware checklist results are not yet recorded. Read
 > [Known limitations](#known-limitations) before using it with a printer.
 
 ![Mainsail served through the simulated Home Assistant ingress path in the automated test environment (no printer connected)](docs/images/mainsail-ingress-test.jpg)
@@ -57,10 +59,11 @@ configured yet.*
 | Ingress through the real Supervisor: UI, API, WebSocket, 24 MiB upload | **Tested** (scripted; browser view in the HA frontend not yet checked) |
 | App update (0.1.0 → 0.1.1) with pre-update backup; data kept | **Tested** (HAOS 18.2, no printer connected) |
 | Restore from a Home Assistant backup, rollback | **Not yet tested** |
-| USB serial connection to a real printer | **Not yet tested** |
-| Ender 3 V3 SE on real hardware (motion, heaters, probe, printing) | **Not yet tested** |
+| USB serial connection to a real printer | **Tested** on one Ender 3 V3 SE (USB replug while on: not yet) |
+| Ender 3 V3 SE on real hardware (motion, heaters, probe, printing) | **Tested on one printer**: calibrated and printed, longest 18 h; checklist steps not recorded |
+| Slicer upload over the direct port; `trusted_networks` | **Tested** (OrcaSlicer 2.5.0 on the LAN) |
 | aarch64 (Raspberry Pi, ODROID, Green, Yellow) | **Planned** |
-| Original Ender 3 V3 SE display (firmware variant + `display.cfg`) | **Experimental**: builds and loads in tests (Klipper batch mode); not yet tested on hardware |
+| Original Ender 3 V3 SE display (firmware variant + `display.cfg`) | **Experimental**: works on one printer (reported); not every checklist step done |
 | Pressure-sensor Z-offset, camera, timelapse | **Planned / not supported** |
 
 ## Requirements
@@ -144,8 +147,18 @@ the printer is not touched. To go back to the stock firmware, see
 
 ## Known limitations
 
-* **Not validated with a real printer yet.** Everything marked "not yet
-  tested" above is unverified.
+* **Tested on one printer only.** Everything marked "not yet tested" above
+  is unverified.
+* **`SAVE_CONFIG` cannot store the Z-offset or PID values** while the
+  profile sets them (Klipper refuses options defined in included files).
+  Until the profile is fixed, move `control`, `pid_Kp`, `pid_Ki` and
+  `pid_Kd` (in `[extruder]` and `[heater_bed]`) and `z_offset` (in
+  `[bltouch]`) from your copy of `profiles/ender3-v3-se/printer.cfg` into
+  `/config/printer.cfg`, below the include lines. Klipper replaces values
+  in that file when it saves. Only commenting them out does not work
+  before the first save: Klipper requires them.
+* **Use the IP address in slicers.** `homeassistant.local` may resolve to an
+  IPv6 link-local address first, which OrcaSlicer cannot reach.
 * **A host restart interrupts a running print.** Klipper runs on the Home
   Assistant machine. Rebooting or updating Home Assistant OS, restarting or
   updating this app, or a host crash all end the current print. Klipper's
