@@ -142,7 +142,41 @@ Replace your `printer.cfg` (via Mainsail → *Machine*) with:
 ```ini
 [include klipper-haos/generated.cfg]
 [include profiles/ender3-v3-se/printer.cfg]
+
+# Starting values. PID_CALIBRATE / PROBE_CALIBRATE + SAVE_CONFIG
+# replace them (SAVE_CONFIG comments these lines out).
+[extruder]
+control: pid
+pid_Kp: 27.142
+pid_Ki: 1.371
+pid_Kd: 134.351
+
+[heater_bed]
+control: pid
+pid_Kp: 66.371
+pid_Ki: 0.846
+pid_Kd: 1301.702
+
+[bltouch]
+# SAFETY: 0.0 deliberately leaves the nozzle ABOVE the bed.
+z_offset: 0.0
 ```
+
+The PID and Z-offset values live in your own `printer.cfg`, not in the
+profile. Klipper's `SAVE_CONFIG` refuses to store a value that an included
+file sets, so this is the only place where `PID_CALIBRATE` and
+`PROBE_CALIBRATE` results can be saved. `SAVE_CONFIG` comments out these
+starting lines and writes the measured values at the end of the file.
+Without the block Klipper does not start and names the missing option.
+
+**Profiles installed by app 0.1.3 or earlier** set these values in
+`profiles/ender3-v3-se/printer.cfg`, so `SAVE_CONFIG` fails with
+*"conflicts with included value"*. Fix your copy: delete or comment out
+`control`, `pid_Kp`, `pid_Ki` and `pid_Kd` in `[extruder]` and
+`[heater_bed]`, and `z_offset` in `[bltouch]`. Then add the block above to
+`/config/printer.cfg`, unless a `SAVE_CONFIG` block at its end already has
+those values. Also delete `shaper_freq_x` and `shaper_freq_y` in
+`[input_shaper]` if you never set them (they default to 0).
 
 Restart Klipper, then work through the
 [hardware validation checklist](hardware-validation.md) **in order**. Do not
@@ -150,8 +184,8 @@ skip ahead to homing or heating.
 
 Things the profile deliberately leaves unsafe-to-print until you calibrate:
 
-* `z_offset: 0.0` keeps the nozzle **above** the bed. Calibrate it with
-  `PROBE_CALIBRATE`.
+* `z_offset: 0.0` (in your `printer.cfg`) keeps the nozzle **above** the
+  bed. Calibrate it with `PROBE_CALIBRATE`.
 * PID values are community starting points. Run `PID_CALIBRATE`.
 * `START_PRINT` is blocked until you run
   `MARK_HARDWARE_VALIDATED CONFIRM=YES`.

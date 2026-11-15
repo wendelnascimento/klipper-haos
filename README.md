@@ -149,14 +149,11 @@ the printer is not touched. To go back to the stock firmware, see
 
 * **Tested on one printer only.** Everything marked "not yet tested" above
   is unverified.
-* **`SAVE_CONFIG` cannot store the Z-offset or PID values** while the
-  profile sets them (Klipper refuses options defined in included files).
-  Until the profile is fixed, move `control`, `pid_Kp`, `pid_Ki` and
-  `pid_Kd` (in `[extruder]` and `[heater_bed]`) and `z_offset` (in
-  `[bltouch]`) from your copy of `profiles/ender3-v3-se/printer.cfg` into
-  `/config/printer.cfg`, below the include lines. Klipper replaces values
-  in that file when it saves. Only commenting them out does not work
-  before the first save: Klipper requires them.
+* **Profiles from app 0.1.3 or earlier block `SAVE_CONFIG`** for the
+  Z-offset and PID values (Klipper refuses options set in included files).
+  Newer profiles keep those values in your own `printer.cfg`. To fix an
+  older copy, see
+  [printer setup → load the profile](docs/printer-setup.md#8-load-the-profile-and-validate-the-hardware).
 * **Use the IP address in slicers.** `homeassistant.local` may resolve to an
   IPv6 link-local address first, which OrcaSlicer cannot reach.
 * **A host restart interrupts a running print.** Klipper runs on the Home

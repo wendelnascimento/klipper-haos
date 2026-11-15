@@ -282,4 +282,4 @@ listed the seeded files. See the screenshot in the README.
 | Every step of the [hardware validation checklist](hardware-validation.md), recorded | `MARK_HARDWARE_VALIDATED` was run on one printer, but the step results were not recorded | v0.2.0 |
 | Recovery to the stock Creality firmware | Flashing Klipper worked (both variants); going back to stock has not been tested | v0.2.0 |
 | Filament macros (`LOAD_FILAMENT`, `UNLOAD_FILAMENT`, `PURGE`, `M600`) on the printer | Added in 0.1.3, batch-mode tests only | v0.2.0 |
-| `SAVE_CONFIG` with the shipped profile | Klipper refuses to save Z-offset and PID while the profile sets them (see the real printer run) | v0.2.0 |
+| `SAVE_CONFIG` with the fixed profile on the printer | Fixed after 0.1.3; a batch-mode test saves a probe Z-offset, PID saving is covered only by a static check | v0.2.0 |

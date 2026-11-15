@@ -19,7 +19,8 @@ are checked only when they are done **and** verified as described.
 - [ ] Ender 3 V3 SE: complete the [hardware validation checklist](hardware-validation.md)
 - [ ] Determine driver chip variants (TMC2208 / MS35774) and adjust the profile
   (one board works with TMC2208 UART)
-- [ ] Fix the profile so `SAVE_CONFIG` can store Z-offset and PID
+- [x] Fix the profile so `SAVE_CONFIG` can store Z-offset and PID (batch-mode
+  test; not yet repeated on the printer)
 - [x] Measured CPU and RAM usage on the target Celeron, idle and printing
   (idle 55.5 MiB; printing 67 MiB, under 3 % CPU)
 - [ ] Verified firmware flashing and recovery procedure (flashing verified;

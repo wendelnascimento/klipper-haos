@@ -112,8 +112,29 @@ Replace the contents of `printer.cfg` with:
 [include klipper-haos/generated.cfg]
 [include profiles/ender3-v3-se/printer.cfg]
 
+# Starting values. PID_CALIBRATE / PROBE_CALIBRATE + SAVE_CONFIG
+# replace them (SAVE_CONFIG comments these lines out).
+[extruder]
+control: pid
+pid_Kp: 27.142
+pid_Ki: 1.371
+pid_Kd: 134.351
+
+[heater_bed]
+control: pid
+pid_Kp: 66.371
+pid_Ki: 0.846
+pid_Kd: 1301.702
+
+[bltouch]
+# SAFETY: 0.0 deliberately leaves the nozzle ABOVE the bed.
+z_offset: 0.0
+
 # Your own overrides go here. SAVE_CONFIG appends calibration results below.
 ```
+
+Keep the PID and Z-offset values in this file: `SAVE_CONFIG` cannot replace
+values that are set in an included profile file.
 
 Then complete the hardware validation checklist from the project
 documentation. `START_PRINT` refuses to run until you confirm the checklist

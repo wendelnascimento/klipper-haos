@@ -17,6 +17,10 @@
 # firmware build, and runs a test G-code file against a simulated MCU. This
 # is the same mechanism Klipper's own test suite uses.
 #
+# tests/profile/main-<printer>.cfg, if present, is appended to the generated
+# /config/printer.cfg: the values a user keeps in their own file because
+# SAVE_CONFIG may replace them there.
+#
 # This proves the profile is syntactically valid and consistent with the
 # compiled firmware. It does NOT prove the pins match your physical board.
 # =============================================================================
@@ -55,6 +59,8 @@ if [[ -n "${NEG_FW_DIR}" ]]; then
 fi
 
 run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [firmware-dir]
+    # ok: exit 0 and, if a pattern is given, the output contains it.
+    # error: non-zero exit and the output contains the pattern.
     local name="$1" gcode="$2" expect="$3" pattern="${4:-}" fw="${5:-${FW_DIR}}" output rc
     set +e
     output=$(docker run --rm --entrypoint sh \
@@ -90,18 +96,23 @@ gcode:
         {action_raise_error('assert: is_paused=%s' % printer.pause_resume.is_paused)}
     {% endif %}
 EOF
+            if [ -f /tests/main-${PRINTER}.cfg ]; then
+                { echo; cat /tests/main-${PRINTER}.cfg; } >> /config/printer.cfg
+            fi
             rc=0
             /opt/venv/klippy/bin/python /opt/klipper/klippy/klippy.py \
                 /config/printer.cfg -i /tests/${gcode} -o /dev/null \
                 -d /fw/klipper.dict -l /tmp/klippy.log || rc=\$?
             cat /tmp/klippy.log
+            echo '===== /config/printer.cfg after the run ====='
+            cat /config/printer.cfg
             exit \$rc
         " 2>&1)
     rc=$?
     set -e
     local ok=0
     if [[ "${expect}" == "ok" ]]; then
-        [[ ${rc} -eq 0 ]] && ok=1
+        [[ ${rc} -eq 0 ]] && { [[ -z "${pattern}" ]] || grep -qF -- "${pattern}" <<< "${output}"; } && ok=1
     elif [[ ${rc} -ne 0 ]] && grep -qF -- "${pattern}" <<< "${output}"; then
         ok=1
     fi
@@ -120,6 +131,7 @@ run_case "config loads and basic motion/heater G-code runs" basic.gcode ok || fa
 run_case "START_PRINT is blocked before hardware validation" start-print-gate.gcode error \
     "Error evaluating 'gcode_macro START_PRINT:gcode': gcode.CommandError: START_PRINT blocked" || failed=1
 run_case "START_PRINT runs after MARK_HARDWARE_VALIDATED" start-print-validated.gcode ok || failed=1
+run_case "SAVE_CONFIG stores a probe Z-offset (no include conflict)" save-config.gcode ok     "#*# z_offset = 0.100" || failed=1
 run_case "filament macros: load, purge, unload, M600 and RESUME" filament.gcode ok || failed=1
 run_case "LOAD_FILAMENT refuses a temperature below min_extrude_temp" filament-cold.gcode error \
     "LOAD_FILAMENT: TEMP must be between 170 and 260" || failed=1

@@ -4,6 +4,18 @@ All notable changes to this app are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and the project uses
 [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Fixed
+
+- `SAVE_CONFIG` can now store the Ender 3 V3 SE's PID and Z-offset
+  calibration. The profile set those values itself, and Klipper refuses to
+  save options set in an included file ("conflicts with included value").
+  The starting values now go into the user's own `printer.cfg` (shown in
+  the profile header and `docs/printer-setup.md`). The profile also no
+  longer sets `shaper_freq_x/y` (they default to 0). Existing copies of the
+  profile are not changed; `docs/printer-setup.md` explains the fix.
+
 ## [0.1.3] - 2026-11-15
 
 ### Added
