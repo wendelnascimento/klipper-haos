@@ -110,19 +110,46 @@ the display firmware version.
 * Klipper's usual protections (thermal runaway checks, MCU timeouts) do not
   depend on the display.
 
-## Custom menus
+## Macros menu
 
-`display.cfg` can add entries to the screen's "Macros" menu, for example:
+The screen's *Miscellaneous* → macros menu lists only the
+`[e3v3se_display MACRO<n>]` sections in your configuration. With none it
+shows "No macros". `display.cfg` defines three, for the
+[filament macros](printer-setup.md#filament-change-and-purge-macros):
 
 ```ini
 [e3v3se_display MACRO1]
-label: Home all axes
-gcode: G28
+label: Load filament
+gcode: LOAD_FILAMENT
+icon: 14
+
+[e3v3se_display MACRO2]
+label: Unload filament
+gcode: UNLOAD_FILAMENT
+icon: 14
+
+[e3v3se_display MACRO3]
+label: Purge nozzle
+gcode: PURGE
 icon: 14
 ```
 
-Run `ENDER_SE_DISPLAY_ICON_FINDER` in the Mainsail console to browse the
-icon numbers stored in the screen.
+If your `display.cfg` came with an earlier app version, it has none of these:
+the app never overwrites your copy. Paste the sections above into
+`/config/profiles/ender3-v3-se/display.cfg`. You need `filament.cfg` too
+(see the link above).
+
+Add your own entries the same way (`MACRO4`, `MACRO5`, ...). Run `ENDER_SE_DISPLAY_ICON_FINDER` in the
+Mainsail console to browse the icon numbers stored in the screen.
+
+## Remaining time on the screen
+
+The screen's remaining time can differ a lot from Mainsail's or the
+slicer's. The upstream module extrapolates from the share of the file
+already read: elapsed time ÷ progress − elapsed time. File progress does not
+grow evenly with time: slicer thumbnails at the start of the file, and
+layers that differ in detail, skew it. Mainsail and the slicer use better
+estimates, so trust them.
 
 ## Updating the bundled display code
 

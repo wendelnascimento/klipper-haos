@@ -13,6 +13,12 @@ All notable changes to this app are documented here. The format follows
   `profiles/ender3-v3-se/filament.cfg`. Not yet tested on hardware.
   Existing installs get the file but must add `[include filament.cfg]` to
   their copy of the profile's `printer.cfg` (see `docs/printer-setup.md`).
+- `display.cfg` now fills the screen's macros menu with load, unload and
+  purge entries; before, the menu showed "No macros".
+
+### Documentation
+
+- Why the screen's remaining time differs from Mainsail's.
 
 ## [0.1.2] - 2026-11-14
 
