@@ -60,6 +60,7 @@ options:
   trusted_networks: []
   cors_domains: []
   export_api_key: false
+  spoolman: false
 schema:
   serial_device: "device(subsystem=tty)?"
   log_level: list(debug|info|warning|error)
@@ -68,3 +69,4 @@ schema:
   cors_domains:
     - "match(^https?://[A-Za-z0-9*.-]+(:[0-9]{1,5})?$)"
   export_api_key: bool
+  spoolman: bool

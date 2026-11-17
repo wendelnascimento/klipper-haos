@@ -25,4 +25,5 @@ printf '%-16s %-44s %s\n' "klipper" "$(arg KLIPPER_COMMIT | cut -c1-12) (master)
 printf '%-16s %-44s %s\n' "moonraker" "$(arg MOONRAKER_VERSION)" "$(latest_tag Arksine/moonraker)"
 printf '%-16s %-44s %s\n' "mainsail" "$(arg MAINSAIL_VERSION)" "$(latest_tag mainsail-crew/mainsail)"
 printf '%-16s %-44s %s\n' "mainsail-config" "$(arg MAINSAIL_CONFIG_VERSION)" "$(latest_tag mainsail-crew/mainsail-config)"
+printf '%-16s %-44s %s\n' "spoolman" "$(arg SPOOLMAN_VERSION)" "$(latest_tag Donkie/Spoolman)"
 printf '%-16s %-44s\n' "base image" "$(arg BUILD_FROM | cut -d@ -f1)"

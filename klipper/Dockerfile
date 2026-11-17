@@ -4,8 +4,9 @@
 #
 # Three stages:
 #   1. mainsail      - builds the Mainsail web UI from a pinned source tag
-#   2. python-build  - fetches Klipper/Moonraker at pinned commits and builds
-#                      their Python virtual environments (incl. C extensions)
+#   2. python-build  - fetches Klipper/Moonraker at pinned commits and the
+#                      Spoolman release archive by SHA-256, and builds their
+#                      Python virtual environments (incl. C extensions)
 #   3. runtime       - the final image: no compilers, no git, no node
 #
 # All upstream versions are pinned by tag *and* verified by commit hash.
@@ -24,6 +25,10 @@ ARG MAINSAIL_VERSION=v2.19.0
 ARG MAINSAIL_COMMIT=5fb9e77fb9f4e60cf0725d9dc7f57cf7b84bbd70
 ARG MAINSAIL_CONFIG_VERSION=v1.2.1
 ARG MAINSAIL_CONFIG_COMMIT=e57810d51b5c634aadaca4db923bfcba269ae4b3
+# Spoolman (optional, off by default): the upstream release archive, which
+# already contains the built web client. Verified by SHA-256.
+ARG SPOOLMAN_VERSION=v0.27.1
+ARG SPOOLMAN_SHA256=77ba10fa505a42cef606eabec1a7c9a5b93c51dc40067456a29a7d9480ef27d6
 
 ###############################################################################
 # Stage 1: Mainsail
@@ -38,6 +43,15 @@ WORKDIR /src
 RUN git clone --depth 1 --branch "${MAINSAIL_VERSION}" \
         https://github.com/mainsail-crew/mainsail.git . \
     && test "$(git rev-parse HEAD)" = "${MAINSAIL_COMMIT}"
+
+# One small change: Mainsail's "Open Spoolman" button points at the Spoolman
+# bundled in this app, under the app's own base path (see the patch header and
+# THIRD_PARTY_NOTICES.md). --check first, so an upstream change fails the build
+# instead of silently skipping the patch.
+COPY mainsail/patches /tmp/mainsail-patches
+RUN for p in /tmp/mainsail-patches/*.patch; do \
+        git apply --check "${p}" && git apply "${p}" || exit 1; \
+    done
 
 RUN npm ci --no-audit --no-fund
 
@@ -59,6 +73,8 @@ ARG MOONRAKER_VERSION
 ARG MOONRAKER_COMMIT
 ARG MAINSAIL_CONFIG_VERSION
 ARG MAINSAIL_CONFIG_COMMIT
+ARG SPOOLMAN_VERSION
+ARG SPOOLMAN_SHA256
 
 RUN apk add --no-cache \
         build-base \
@@ -126,16 +142,39 @@ RUN git clone --depth 1 --branch "${MAINSAIL_CONFIG_VERSION}" \
     && test "$(git rev-parse HEAD)" = "${MAINSAIL_CONFIG_COMMIT}" \
     && rm -rf .git .github
 
+# --- Spoolman (filament inventory, optional) ---------------------------------
+# Upstream's requirements.txt is an exact lock exported from its uv.lock, so
+# it is used as is. Tests, dev scripts and the legacy React client are not
+# shipped; the app always serves the current client.
+RUN wget -q -O /tmp/spoolman.zip \
+        "https://github.com/Donkie/Spoolman/releases/download/${SPOOLMAN_VERSION}/spoolman.zip" \
+    && echo "${SPOOLMAN_SHA256}  /tmp/spoolman.zip" > /tmp/spoolman.zip.sha256 \
+    && sha256sum -c /tmp/spoolman.zip.sha256 \
+    && mkdir -p /opt/spoolman \
+    && unzip -q /tmp/spoolman.zip -d /opt/spoolman \
+    && rm /tmp/spoolman.zip /tmp/spoolman.zip.sha256 \
+    && cd /opt/spoolman \
+    && grep -q "\"version\": \"${SPOOLMAN_VERSION}\"" release_info.json \
+    && test -f client_v2/build/200.html \
+    && rm -rf .github client scripts tests tests_frontend tests_frontend_v2 \
+        tests_integration Dockerfile entrypoint.sh lefthook.yml uv.lock
+
+RUN python3 -m venv /opt/venv/spoolman \
+    && /opt/venv/spoolman/bin/pip install -r /opt/spoolman/requirements.txt \
+    && /opt/venv/spoolman/bin/python -m compileall -q /opt/spoolman/spoolman /opt/spoolman/migrations
+
 # Record exact dependency versions for traceability (shown in the app log).
 RUN { \
         echo "klipper=$(cat /opt/klipper/klippy/.version)"; \
         echo "moonraker=$(cat /opt/moonraker/moonraker/.version)"; \
         echo "mainsail_config=${MAINSAIL_CONFIG_VERSION}"; \
         echo "e3v3se_display=$(sed -n 's/^commit \(.\{12\}\).*/\1/p' /tmp/requirements/e3v3se-display.lock)"; \
+        echo "spoolman=${SPOOLMAN_VERSION}"; \
         echo "python=$(python3 -c 'import platform; print(platform.python_version())')"; \
     } > /opt/versions.txt \
     && /opt/venv/klippy/bin/pip freeze > /opt/klippy-freeze.txt \
-    && /opt/venv/moonraker/bin/pip freeze > /opt/moonraker-freeze.txt
+    && /opt/venv/moonraker/bin/pip freeze > /opt/moonraker-freeze.txt \
+    && /opt/venv/spoolman/bin/pip freeze > /opt/spoolman-freeze.txt
 
 ###############################################################################
 # Stage 3: runtime
@@ -159,7 +198,8 @@ COPY --from=python-build /opt/klipper /opt/klipper
 COPY --from=python-build /opt/moonraker /opt/moonraker
 COPY --from=python-build /opt/venv /opt/venv
 COPY --from=python-build /opt/mainsail-config /opt/mainsail-config
-COPY --from=python-build /opt/versions.txt /opt/klippy-freeze.txt /opt/moonraker-freeze.txt /opt/
+COPY --from=python-build /opt/spoolman /opt/spoolman
+COPY --from=python-build /opt/versions.txt /opt/klippy-freeze.txt /opt/moonraker-freeze.txt /opt/spoolman-freeze.txt /opt/
 COPY --from=mainsail /src/dist /opt/mainsail
 
 RUN echo "mainsail=${MAINSAIL_VERSION}" >> /opt/versions.txt \

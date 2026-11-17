@@ -1,0 +1,53 @@
+#!/command/with-contenv bashio
+# shellcheck shell=bash
+# ==============================================================================
+# Spoolman filament inventory (optional, app option 'spoolman').
+# Listens on 127.0.0.1:7912 only, under the sub-path /spoolman. nginx serves
+# its web UI through Home Assistant ingress; Moonraker uses its API directly.
+# The SQLite database lives in /data/spoolman, so it is part of app backups.
+# ==============================================================================
+# shellcheck source=../../../../usr/local/lib/klipper-haos/common.sh
+source /usr/local/lib/klipper-haos/common.sh
+
+if [[ "$(khaos::option spoolman false)" != "true" ]]; then
+    # A longrun cannot be left out of the bundle at runtime; idle instead.
+    # nginx answers /spoolman/ with a hint to enable the option.
+    exec sleep infinity
+fi
+
+delay=$(khaos::restart_delay spoolman)
+if (( delay > 0 )); then
+    bashio::log.info "Waiting ${delay}s before restarting Spoolman..."
+    sleep "${delay}"
+fi
+
+case "$(khaos::option log_level info)" in
+    debug) level=DEBUG ;;
+    warning) level=WARNING ;;
+    error) level=ERROR ;;
+    *) level=INFO ;;
+esac
+
+mkdir -p "${KHAOS_SPOOLMAN_DIR}/backups"
+
+export SPOOLMAN_HOST=127.0.0.1
+export SPOOLMAN_PORT=7912
+export SPOOLMAN_BASE_PATH=/spoolman
+export SPOOLMAN_DB_TYPE=sqlite
+export SPOOLMAN_DIR_DATA="${KHAOS_SPOOLMAN_DIR}"
+export SPOOLMAN_DIR_BACKUPS="${KHAOS_SPOOLMAN_DIR}/backups"
+export SPOOLMAN_DIR_LOGS="${KHAOS_LOG_DIR}"
+export SPOOLMAN_LOGGING_LEVEL="${level}"
+# Versions are pinned by the app release and updated through Home Assistant.
+export SPOOLMAN_UPDATE_CHECK=FALSE
+# Spoolman runs its database migrations with the 'alembic' command.
+export PATH="${SPOOLMAN_VENV}/bin:${PATH}"
+# The launcher lives outside /opt/spoolman, so Python would not find the
+# 'spoolman' package from the working directory alone.
+export PYTHONPATH=/opt/spoolman
+
+bashio::log.info "Starting Spoolman (database: ${KHAOS_SPOOLMAN_DIR})"
+cd /opt/spoolman || exit 1
+# uvicorn spoolman.main:app, minus a false "data not mounted" warning
+# (see spoolman_run.py).
+exec "${SPOOLMAN_VENV}/bin/python" "${KHAOS_LIB_DIR}/spoolman_run.py"

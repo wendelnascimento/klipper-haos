@@ -53,6 +53,10 @@ GENERATED_HEADER = """\
 KLIPPER_INCLUDE = "[include klipper-haos/generated.cfg]"
 MOONRAKER_INCLUDE = "[include klipper-haos/moonraker-generated.conf]"
 
+# The optional bundled Spoolman. It listens inside the container only, under
+# the same sub-path nginx serves it at (see the spoolman s6 service).
+SPOOLMAN_URL = "http://127.0.0.1:7912/spoolman"
+
 
 class OptionsError(ValueError):
     """Raised when user-supplied options are invalid or unsafe."""
@@ -78,6 +82,7 @@ class Options:
     cors_domains: list[str] = field(default_factory=list)
     export_api_key: bool = False
     log_level: str = "info"
+    spoolman: bool = False
 
 
 # --------------------------------------------------------------------------
@@ -163,6 +168,7 @@ def parse_options(raw: dict) -> Options:
         cors_domains=validate_cors(raw.get("cors_domains")),
         export_api_key=bool(raw.get("export_api_key", False)),
         log_level=level,
+        spoolman=bool(raw.get("spoolman", False)),
     )
 
 
@@ -248,6 +254,15 @@ def render_moonraker_generated(opts: Options, paths: Paths) -> str:
         "[octoprint_compat]",
         "",
     ]
+    if opts.spoolman:
+        lines += [
+            "[spoolman]",
+            "# The Spoolman bundled in this app (app option 'spoolman'). Mainsail",
+            "# talks to it through Moonraker. Its own web UI is served at",
+            "# <Mainsail>/spoolman/ through Home Assistant ingress only.",
+            f"server: {SPOOLMAN_URL}",
+            "",
+        ]
     return "\n".join(lines)
 
 

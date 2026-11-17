@@ -4,7 +4,8 @@
 # Home Assistant backup_pre hook.
 #
 # Asks Moonraker for a consistent snapshot of its SQLite database so the hot
-# backup contains a restorable copy even if the live file was mid-write.
+# backup contains a restorable copy even if the live file was mid-write. Does
+# the same for the bundled Spoolman's database when it exists.
 #
 # This hook MUST NOT fail: a non-zero exit aborts the whole Home Assistant
 # backup. Moonraker refuses database backups while printing; that is fine,
@@ -18,5 +19,35 @@ if output=$("${MOONRAKER_PYTHON}" "${KHAOS_LIB_DIR}/moonraker_rpc.py" \
     bashio::log.info "Pre-backup: ${output}"
 else
     bashio::log.warning "Pre-backup: database snapshot skipped (${output})"
+fi
+
+# SQLite's online backup API gives a consistent copy while Spoolman keeps
+# running. Kept next to Spoolman's own nightly backups.
+spoolman_db="${KHAOS_SPOOLMAN_DIR}/spoolman.db"
+if [[ -f "${spoolman_db}" ]]; then
+    snapshot="${KHAOS_SPOOLMAN_DIR}/backups/klipper-haos-pre-backup.db"
+    if output=$("${MOONRAKER_PYTHON}" - "${spoolman_db}" "${snapshot}" 2>&1 <<'PY'
+import os
+import sqlite3
+import sys
+
+src, dst = sys.argv[1], sys.argv[2]
+os.makedirs(os.path.dirname(dst), exist_ok=True)
+tmp = dst + ".tmp"
+source = sqlite3.connect(f"file:{src}?mode=ro", uri=True, timeout=10)
+target = sqlite3.connect(tmp)
+try:
+    source.backup(target)
+finally:
+    target.close()
+    source.close()
+os.replace(tmp, dst)
+print(dst)
+PY
+    ); then
+        bashio::log.info "Pre-backup: Spoolman database snapshot ${output}"
+    else
+        bashio::log.warning "Pre-backup: Spoolman database snapshot skipped (${output})"
+    fi
 fi
 exit 0

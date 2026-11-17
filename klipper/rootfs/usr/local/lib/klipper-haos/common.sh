@@ -10,6 +10,10 @@ export KHAOS_LIB_DIR="/usr/local/lib/klipper-haos"
 
 export KLIPPY_PYTHON="/opt/venv/klippy/bin/python"
 export MOONRAKER_PYTHON="/opt/venv/moonraker/bin/python"
+export SPOOLMAN_VENV="/opt/venv/spoolman"
+# Spoolman's SQLite database and its nightly backups (inside /data, so they
+# are part of the app's Home Assistant backups).
+export KHAOS_SPOOLMAN_DIR="${KHAOS_SPOOLMAN_DIR:-/data/spoolman}"
 
 export KHAOS_LOG_DIR="${KHAOS_DATA_DIR}/logs"
 export KHAOS_MOONRAKER_SOCK="${KHAOS_DATA_DIR}/comms/moonraker.sock"

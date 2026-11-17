@@ -70,6 +70,45 @@ the app config folder (file mode 600) at start-up. Copy the key into your
 slicer, then **turn the option off again**: the file is deleted on the next
 start. The key is never written to the log.
 
+### `spoolman`
+
+Runs the bundled [Spoolman](https://github.com/Donkie/Spoolman) filament
+inventory and connects Moonraker to it. Off by default. See
+[Filament tracking (Spoolman)](#filament-tracking-spoolman).
+
+## Filament tracking (Spoolman)
+
+With the `spoolman` option on (restart the app after changing it),
+Moonraker reports the filament each print uses to Spoolman, and Spoolman
+subtracts it from the active spool.
+
+1. In Mainsail, open the **Spoolman** panel on the dashboard and click the
+   database icon to open Spoolman's own UI in a new browser tab.
+2. Add your filament (Spoolman can import common products from its online
+   catalog) and a spool. For a spool you already used, set its used or
+   remaining weight.
+3. Back in Mainsail's Spoolman panel, select that spool as the active one.
+   Mainsail's start-print dialog also shows the active spool and lets you
+   change it.
+
+Things to know:
+
+* Spoolman's UI is only available through Home Assistant (ingress), because
+  Spoolman has no login of its own. The direct port `7125` answers
+  `/spoolman/` with 404. Slicers and other Mainsail instances still see
+  spool data through Moonraker, with the same API key rules as before.
+* The UI link only works while your Home Assistant session is valid; open
+  it from Mainsail again after logging in.
+* The database is `/data/spoolman/spoolman.db`, inside the app's private
+  data, so it is part of Home Assistant backups. Spoolman keeps its own
+  nightly copies in `/data/spoolman/backups`.
+* Spoolman checks the online SpoolmanDB catalog once an hour; its update
+  check is turned off, because the app release pins the Spoolman version.
+* It uses about 75 MB of extra memory (measured idle in the test container) and
+  next to no CPU while idle.
+* Turning the option off stops Spoolman but keeps the database, so turning
+  it on again brings your spools back.
+
 ## Accessing Mainsail and the API
 
 | Path | Who can use it | Authentication |
@@ -157,7 +196,9 @@ project's `docs/display.md` before flashing.
 
 The app supports hot backups: Home Assistant backups do not stop a running
 print. Before each backup the app asks Moonraker for a consistent snapshot
-of its database. Logs are excluded from backups.
+of its database, and, with the `spoolman` option on, takes a consistent copy
+of Spoolman's database (`/data/spoolman/backups/klipper-haos-pre-backup.db`).
+Logs are excluded from backups.
 
 ## Important safety notes
 

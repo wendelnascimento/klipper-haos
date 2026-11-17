@@ -8,7 +8,9 @@ A Home Assistant backup that includes the *Klipper* app contains:
   calibration results saved by `SAVE_CONFIG`, and
   `klipper-haos-variables.cfg`;
 * `/data`: G-code files and thumbnails, the Moonraker database (print
-  history, Mainsail settings, API key) and database snapshots;
+  history, Mainsail settings, API key) and database snapshots, and, if the
+  `spoolman` option was ever on, the Spoolman database with its backups
+  (`/data/spoolman`);
 * the app options.
 
 Excluded on purpose: `printer_data/logs/*`, `printer_data/comms/*` (sockets)
@@ -23,6 +25,9 @@ and `*.tmp` files.
   `printer_data/backup/database/klipper-haos-pre-backup.db`. If the live
   database file was mid-write during the copy, this snapshot is still
   consistent.
+* With Spoolman, the hook also copies `spoolman.db` with SQLite's online
+  backup to `/data/spoolman/backups/klipper-haos-pre-backup.db`. This works
+  while printing.
 * Moonraker refuses to snapshot **while printing**. The hook then logs a
   warning and the backup continues with the live database. The hook never
   fails the Home Assistant backup.
@@ -40,6 +45,11 @@ and `*.tmp` files.
    `filename=klipper-haos-pre-backup.db`, see the
    [Moonraker API docs](https://moonraker.readthedocs.io)) to restore the
    snapshot.
+4. If the Spoolman database is damaged: stop the app, replace
+   `/data/spoolman/spoolman.db` with `klipper-haos-pre-backup.db` or one of
+   Spoolman's nightly copies from `/data/spoolman/backups`, and start the
+   app. `/data` is not visible in the Samba or File editor apps; this needs
+   SSH access to the host (`/mnt/data/supervisor/addons/data/<id>_klipper`).
 
 ## Verified so far
 

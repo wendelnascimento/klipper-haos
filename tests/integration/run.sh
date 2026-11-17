@@ -55,7 +55,7 @@ trap cleanup EXIT
 
 write_options() {
     cat > "${WORK}/data/options.json" <<EOF
-{"log_level": "info", "trusted_networks": ${1:-[]}, "cors_domains": [], "export_api_key": ${2:-true}}
+{"log_level": "info", "trusted_networks": ${1:-[]}, "cors_domains": [], "export_api_key": ${2:-true}, "spoolman": ${3:-false}}
 EOF
 }
 
@@ -157,6 +157,14 @@ if [[ "${status}" == "101" ]]; then pass "WebSocket upgrade through ingress (101
 # reaches the app behind the Supervisor proxy.
 status=$(ws_status "${INGRESS}/websocket" "http://homeassistant.local:8123")
 if [[ "${status}" == "101" ]]; then pass "browser-style WebSocket (HA Origin) through ingress (101)"; else fail "browser-style WebSocket through ingress (got ${status})"; fi
+http_code() { curl -s -o "${DEVNULL}" -w '%{http_code}' "$@" || true; }
+code=$(http_code "${INGRESS}/spoolman/")
+if [[ "${code}" == "503" ]] && curl -s "${INGRESS}/spoolman/" | grep -q "'spoolman' option"; then
+    pass "Spoolman off by default: /spoolman/ explains how to enable it (503)"
+else
+    fail "Spoolman off by default: /spoolman/ returned ${code}"
+fi
+check "Spoolman not running when the option is off" bash -c "! docker exec ${APP} pgrep -f spoolman_run.py"
 check "ingress port rejects other source addresses (403)" bash -c "[[ \$(docker exec ${APP} curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/) == 403 ]]"
 
 echo "== Authentication on the direct port"
@@ -241,6 +249,71 @@ fi
 check "Klipper stays down" bash -c "! docker exec ${APP} pgrep -f klippy.py"
 check "Moonraker and Mainsail stay available" curl -sf "${INGRESS}/server/info"
 
+echo "== Spoolman (option on)"
+docker rm -f "${APP}" > /dev/null
+write_options '[]' false true
+start_app
+SPOOL="${INGRESS}/spoolman"
+check "Spoolman API answers through ingress" wait_for 90 curl -sf "${SPOOL}/api/v1/info"
+check "Spoolman starts without the false 'not mounted' warning" \
+    bash -c "! docker logs ${APP} 2>&1 | grep -q 'data directory is not mounted'"
+check "nginx starts without warnings" bash -c "! docker logs ${APP} 2>&1 | grep -q 'nginx: \[warn\]'"
+check "Spoolman web UI loads through ingress" bash -c "curl -sf '${SPOOL}/' | grep -q '<title>Spoolman</title>'"
+deep="$(curl -sf "${SPOOL}/spool/show/1" || true)"
+if grep -q '"/api/hassio_ingress/testtoken/spoolman/_app/' <<< "${deep}" \
+    && grep -q 'base: "/api/hassio_ingress/testtoken/spoolman"' <<< "${deep}" \
+    && ! grep -q '"/spoolman/' <<< "${deep}"; then
+    pass "Spoolman deep link (SPA fallback) uses the ingress base path"
+else
+    fail "Spoolman deep link (SPA fallback) uses the ingress base path"
+fi
+asset="$(grep -o '"/api/hassio_ingress/testtoken/spoolman/_app/[^"]*\.js"' <<< "${deep}" | head -1 | tr -d '"' || true)"
+check "Spoolman assets load through ingress" curl -sf "http://127.0.0.1:${INGRESS_PORT}${asset}"
+loc="$(curl -s -o "${DEVNULL}" -w '%{redirect_url}' "${SPOOL}")"
+if [[ "${loc}" == *"/api/hassio_ingress/testtoken/spoolman/" ]]; then
+    pass "/spoolman redirects inside the ingress path"
+else
+    fail "/spoolman redirect went to '${loc}'"
+fi
+# A write the way a browser sends it: its Origin is the Home Assistant host
+# the browser used (here the fake proxy), which is not the Host that reaches
+# the app behind the proxy chain. Spoolman matches it via X-Forwarded-Host.
+code=$(http_code -X POST -H 'Content-Type: application/json' \
+    -H "Origin: http://127.0.0.1:${INGRESS_PORT}" \
+    -d '{"name": "Test PLA", "material": "PLA", "density": 1.24, "diameter": 1.75, "weight": 1000}' \
+    "${SPOOL}/api/v1/filament")
+if [[ "${code}" == "200" ]]; then pass "browser-style write through ingress accepted (200)"; else fail "browser-style write through ingress returned ${code}"; fi
+code=$(http_code -X POST -H 'Content-Type: application/json' -d '{"filament_id": 1}' "${SPOOL}/api/v1/spool")
+if [[ "${code}" == "200" ]]; then pass "spool created through ingress (200)"; else fail "spool create returned ${code}"; fi
+code=$(http_code -X POST -H 'Content-Type: application/json' -H 'Origin: http://evil.example' \
+    -d '{"name": "x", "density": 1.24, "diameter": 1.75}' "${SPOOL}/api/v1/filament")
+if [[ "${code}" == "403" ]]; then pass "cross-origin write through ingress rejected (403)"; else fail "cross-origin write returned ${code}"; fi
+mr_connected() { curl -sf "${INGRESS}/server/spoolman/status" | grep -q '"spoolman_connected": *true'; }
+check "Moonraker is connected to Spoolman" wait_for 30 mr_connected
+check "Moonraker proxies Spoolman requests" bash -c "curl -sf -X POST -H 'Content-Type: application/json' \
+    -d '{\"request_method\": \"GET\", \"path\": \"/v1/spool/1\"}' '${INGRESS}/server/spoolman/proxy' | grep -q 'Test PLA'"
+check "Spoolman database stored in /data/spoolman" test -f "${WORK}/data/spoolman/spoolman.db"
+code=$(http_code "${DIRECT}/spoolman/api/v1/spool")
+if [[ "${code}" == "404" ]]; then pass "direct port does not serve Spoolman (404)"; else fail "direct port Spoolman returned ${code}"; fi
+code=$(docker exec "${PROXY}" sh -c 'wget -q -O /dev/null -T 3 http://172.30.33.10:7912/spoolman/api/v1/info; echo $?' || true)
+if [[ "${code}" != "0" ]]; then pass "Spoolman port is not reachable from other containers"; else fail "Spoolman port reachable from the network"; fi
+check "backup_pre hook exits 0 with Spoolman" docker exec "${APP}" /usr/local/bin/khaos-backup-pre
+check "Spoolman database snapshot written" test -s "${WORK}/data/spoolman/backups/klipper-haos-pre-backup.db"
+docker restart -t 30 "${APP}" > /dev/null
+check "Spoolman data survives a restart" wait_for 90 bash -c "curl -sf '${SPOOL}/api/v1/spool/1' | grep -q 'Test PLA'"
+for _ in 1 2 3 4 5; do
+    wait_for 60 bash -c "docker exec ${APP} pgrep -f spoolman_run.py" || true
+    docker exec "${APP}" pkill -9 -f spoolman_run.py > /dev/null 2>&1 || true
+    sleep 2
+done
+sleep 5
+if docker logs "${APP}" 2>&1 | grep -q 'spoolman failed 5 times'; then
+    pass "Spoolman is not restarted after 5 crashes"
+else
+    fail "Spoolman crash-loop protection did not trigger"
+fi
+check "Moonraker and Mainsail stay available without Spoolman" curl -sf "${INGRESS}/server/info"
+
 echo "== Option validation"
 docker rm -f "${APP}" > /dev/null
 write_options '["0.0.0.0/0"]' false
@@ -260,6 +333,12 @@ start_app
 wait_for 90 curl -sf "${INGRESS}/server/info" > /dev/null || true
 sleep 20
 echo "  INFO  idle memory/CPU: $(docker stats --no-stream --format '{{.MemUsage}} / CPU {{.CPUPerc}}' "${APP}")"
+docker rm -f "${APP}" > /dev/null
+write_options '[]' false true
+start_app
+wait_for 90 curl -sf "${INGRESS}/spoolman/api/v1/info" > /dev/null || true
+sleep 20
+echo "  INFO  idle memory/CPU with Spoolman: $(docker stats --no-stream --format '{{.MemUsage}} / CPU {{.CPUPerc}}' "${APP}")"
 
 echo
 echo "Result: ${passed} passed, ${failed} failed"

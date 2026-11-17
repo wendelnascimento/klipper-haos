@@ -71,6 +71,17 @@ physical access to the printer.
   processing that uses Pillow is covered by an integration test. See
   `klipper/requirements/moonraker-overrides.txt`.
 
+* **Spoolman has no authentication.** Its UI and API are served only on the
+  ingress port, behind the Home Assistant login. It listens on 127.0.0.1,
+  and the direct port answers 404 for `/spoolman` (both covered by the
+  integration tests). For Spoolman, nginx does **not** present the `Origin`
+  as `Host`: it passes the arriving `Host` and the `X-Forwarded-Host` that
+  Home Assistant Core sets to the host the browser used, so Spoolman's own
+  CSRF check stays effective and a write from another origin is refused
+  (tested).
+  Clients on the direct port only reach spool data through Moonraker,
+  which applies the API key and `trusted_networks` rules.
+
 ## Vulnerability scanning
 
 CI runs Trivy on every build (report only, HIGH/CRITICAL, fixed issues

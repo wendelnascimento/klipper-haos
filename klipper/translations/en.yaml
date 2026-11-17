@@ -24,5 +24,11 @@ configuration:
     description: >-
       Write the Moonraker API key to moonraker.apikey in the app config
       folder so you can paste it into a slicer. Turn it off again afterwards.
+  spoolman:
+    name: Spoolman (filament inventory)
+    description: >-
+      Run the bundled Spoolman so Moonraker tracks how much filament is left
+      on each spool. Open its web UI from Mainsail's Spoolman panel; it is
+      only reachable through Home Assistant. Uses about 75 MB more memory.
 network:
   7125/tcp: Mainsail and Moonraker API for slicers and external clients

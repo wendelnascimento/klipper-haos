@@ -14,13 +14,14 @@ own license; the MIT license does not replace or override any of them.
 | Mainsail (built from source) | `v2.19.0` (commit `5fb9e77fb9f4`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail |
 | Ender 3 V3 SE display modules (`e3v3se_display`, `TJC3224`, `printerInterface`, `serial_bridge` in `klippy/extras`) | commit `d74d36bb69bd` of the fork, files listed with SHA-256 in `klipper/requirements/e3v3se-display.lock` | GPL-3.0 | https://github.com/jpcurti/ender3-v3-se-klipper-with-display |
 | mainsail-config (client macros) | `v1.2.1` (commit `e57810d51b5c`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail-config |
+| Spoolman (optional, off by default; release archive with its built web client) | `v0.27.1` (archive SHA-256 in `klipper/Dockerfile`) | MIT | https://github.com/Donkie/Spoolman |
 | Home Assistant base image (Alpine, s6-overlay, bashio, tempio) | `base-python:3.13-alpine3.23` (digest pinned in the Dockerfile) | Apache-2.0 (image tooling), plus the licenses of the Alpine packages it contains | https://github.com/home-assistant/docker-base |
 | nginx | Alpine package (1.28.x) | BSD-2-Clause | https://nginx.org |
-| Python packages | exact versions in `klipper/requirements/*.txt` and `klipper/requirements/moonraker-overrides.txt` | various (MIT, BSD, Apache-2.0, MPL-2.0, LGPL, ...) | PyPI |
+| Python packages | exact versions in `klipper/requirements/*.txt`, `klipper/requirements/moonraker-overrides.txt` and Spoolman's own `requirements.txt` | various (MIT, BSD, Apache-2.0, MPL-2.0, LGPL, ...) | PyPI |
 
 The exact versions inside a given image are also recorded in the image at
-`/opt/versions.txt`, `/opt/klippy-freeze.txt` and `/opt/moonraker-freeze.txt`
-and printed in the app log at every start.
+`/opt/versions.txt`, `/opt/klippy-freeze.txt`, `/opt/moonraker-freeze.txt` and
+`/opt/spoolman-freeze.txt`, and printed in the app log at every start.
 
 ## GPL-3.0 obligations
 
@@ -32,11 +33,15 @@ distributing these programs, so the project:
   image (Python and configuration files under `/opt`), together with their
   license files (`/opt/klipper/COPYING`, `/opt/moonraker/LICENSE`,
   `/opt/mainsail-config/LICENSE`);
-* builds Mainsail from the exact upstream tag listed above **without
-  modifications**, using `vite build --base=/__KHAOS_BASE__/` and the
-  environment variable `VUE_APP_PATH=/__KHAOS_BASE__` (see
+* builds Mainsail from the exact upstream tag listed above with **one
+  modification**, `klipper/mainsail/patches/0001-spoolman-url.patch`
+  (November 2026): the "Open Spoolman" button opens the Spoolman bundled
+  in this app under the app's own base path instead of port 7912 on the
+  Moonraker host. The build uses `vite build --base=/__KHAOS_BASE__/` and
+  the environment variable `VUE_APP_PATH=/__KHAOS_BASE__` (see
   `klipper/Dockerfile`). The complete corresponding source is the upstream
-  tag plus those build settings, which are part of this repository. At
+  tag plus that patch and those build settings, which are part of this
+  repository. At
   runtime nginx replaces the placeholder string `/__KHAOS_BASE__` in the
   served files with the actual URL prefix;
 * pins every component to an exact commit so the corresponding source can

@@ -1,0 +1,4 @@
+#!/bin/sh
+# Spoolman is optional: after repeated crashes leave it down and keep
+# Klipper, Moonraker and Mainsail running.
+exec /usr/local/bin/khaos-finish spoolman "$1" "$2" stop

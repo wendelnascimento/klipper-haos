@@ -97,6 +97,11 @@ Upstream projects release independently. Never auto-update them.
    and the changelog.
 6. A Klipper bump requires new MCU firmware. Mention it prominently in the
    release notes.
+7. Spoolman: set `SPOOLMAN_VERSION` and `SPOOLMAN_SHA256` (the `digest` of
+   the `spoolman.zip` asset in the GitHub release API). Its Python
+   dependencies come from the archive's own `requirements.txt`. A Mainsail
+   bump must still apply `klipper/mainsail/patches/*.patch`; the build fails
+   if it does not.
 
 Base images and GitHub Actions are proposed by Dependabot. These also need
 a full test run before merging.

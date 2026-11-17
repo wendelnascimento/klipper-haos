@@ -9,7 +9,7 @@
   use).
 * Secure defaults. Reproducible, pinned builds.
 
-## One container, three services
+## One container, four services
 
 ```
 ┌──────────────────────────── app container (s6-overlay, PID 1) ────────────────────────────┐
@@ -24,6 +24,9 @@
 │        │                                                                                   │
 │        ├──► nginx     (longrun)  :8099 ingress (172.30.32.2 only) · :7125 direct port     │
 │        │        serves /opt/mainsail, proxies API + WebSocket to Moonraker                 │
+│        │                                                                                   │
+│        ├──► spoolman  (longrun)  127.0.0.1:7912/spoolman, only if the option is on         │
+│        │        filament inventory; Moonraker uses its API, nginx its UI (ingress only)    │
 │        │                                                                                   │
 │        └──► khaos-apikey (run-once longrun) optional API key export                       │
 └────────────────────────────────────────────────────────────────────────────────────────────┘
@@ -112,6 +115,7 @@ One build serves both entry points, and no Supervisor API access is needed.
 | `/data/printer_data/backup` | `/data` | Moonraker database snapshots | yes |
 | `/data/printer_data/logs` | `/data` | `klippy.log`, `moonraker.log` (rotated) | **no** |
 | `/data/printer_data/config` | symlink → `/config` | Moonraker's view of the config root | n/a |
+| `/data/spoolman` | `/data` | Spoolman SQLite database, its nightly backups and the pre-backup snapshot (option `spoolman`) | yes |
 | `/run/klipper-haos` | tmpfs | Klipper API socket, virtual printer tty, crash counters | n/a |
 | `/tmp` | tmpfs (`tmpfs: true`) | nginx temp paths | n/a |
 
@@ -137,17 +141,33 @@ device path.
 2. **python-build**: on the Home Assistant Python base image, clones
    Klipper and Moonraker at pinned commits, creates virtual environments
    with exact constraints, applies the documented security overrides, and
-   pre-compiles Klipper's C helper and Python bytecode.
+   pre-compiles Klipper's C helper and Python bytecode. It also downloads
+   the Spoolman release archive, checks its SHA-256 and installs Spoolman's
+   exact upstream lock into its own virtual environment.
 3. **runtime**: the base image plus nginx and runtime libraries. It contains
    no compiler, git or node.
 
 The Home Assistant builder no longer uses `build.yaml` (retired April
 2026); the Dockerfile `FROM` is the single source of truth.
 
+### Spoolman under the ingress prefix
+
+Spoolman (off by default) runs with `SPOOLMAN_BASE_PATH=/spoolman` on
+`127.0.0.1:7912`. Its prerendered pages use relative paths and work under
+any prefix. For deep links Spoolman serves a fallback document with
+absolute `/spoolman/` paths; on the ingress server nginx prefixes those
+with the ingress path, the same way as Mainsail's placeholder. Spoolman has
+no authentication, so only the ingress server serves it; the direct port
+answers 404. Moonraker talks to `127.0.0.1:7912` directly, and Mainsail
+reads spool data through Moonraker. Mainsail's "Open Spoolman" button is
+patched to open `<base>/spoolman/`, because upstream would open port 7912
+on the Home Assistant host.
+
 ## Resource use
 
 Measured in the integration test container on a desktop machine, idle, no
-printer: **about 55 MiB RAM** for all services, under 1 % CPU. This has not
+printer: **about 55 MiB RAM** for all services, under 1 % CPU. With the
+`spoolman` option on: **about 130 MiB**, still under 1 % CPU. This has not
 been measured on the target Celeron yet. Klipper's CPU use while printing
 depends on the printer and move complexity. Numbers from the target
 hardware will be added to the test report.

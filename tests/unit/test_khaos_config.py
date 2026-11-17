@@ -164,6 +164,18 @@ def test_moonraker_includes_user_networks_and_cors(paths):
     assert "cors_domains:\n    http://mainsail.local" in text
 
 
+def test_spoolman_is_off_by_default(paths):
+    opts = kc.parse_options({})
+    assert opts.spoolman is False
+    assert "[spoolman]" not in kc.render_moonraker_generated(opts, paths)
+
+
+def test_spoolman_section_points_at_the_bundled_instance(paths):
+    text = kc.render_moonraker_generated(kc.parse_options({"spoolman": True}), paths)
+    section = text.split("[spoolman]")[1]
+    assert "server: http://127.0.0.1:7912/spoolman\n" in section
+
+
 def test_klipper_generated_with_and_without_serial(paths):
     with_serial = kc.render_klipper_generated(
         kc.parse_options({"serial_device": "/dev/ttyUSB0"}), paths
@@ -237,6 +249,7 @@ def test_manifest_schema_matches_generator_options():
     schema_keys = set(manifest["schema"])
     assert schema_keys == {
         "serial_device", "log_level", "trusted_networks", "cors_domains", "export_api_key",
+        "spoolman",
     }
     # Every option with a default must also be in the schema.
     assert set(manifest["options"]) <= schema_keys
