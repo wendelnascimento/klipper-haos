@@ -6,6 +6,20 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-17
+
+### Added
+
+- Optional bundled [Spoolman](https://github.com/Donkie/Spoolman) v0.27.1
+  for filament inventory (new option `spoolman`, off by default). Moonraker
+  is connected to it automatically, so Mainsail's Spoolman panel works and
+  each print's filament use is subtracted from the active spool. Spoolman's
+  web UI is served through Home Assistant ingress only (it has no login);
+  the direct port does not serve it. Its database lives in
+  `/data/spoolman` and is included in backups, with a consistent snapshot
+  taken before each backup. Mainsail's "Open Spoolman" button is patched
+  to open this bundled instance. Not yet tested on Home Assistant OS.
+
 ### Fixed
 
 - `SAVE_CONFIG` can now store the Ender 3 V3 SE's PID and Z-offset

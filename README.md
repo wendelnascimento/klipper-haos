@@ -8,7 +8,7 @@ no Raspberry Pi, no second operating system, no virtual machine and no
 unmanaged Docker containers. The Home Assistant Supervisor installs,
 updates, backs up and supervises it like any other app.
 
-> **Status: experimental (v0.1.3).** The app is tested automatically in
+> **Status: experimental (v0.2.0).** The app is tested automatically in
 > containers and runs on a real Home Assistant OS host. It has driven one
 > Ender 3 V3 SE through real prints, the longest 18 hours (see the
 > [test report](docs/test-report.md)). That is one printer, and the
@@ -39,6 +39,9 @@ configured yet.*
   safety gate.
 * Optional, experimental support for the Ender 3 V3 SE's **original
   display** and knob ([docs/display.md](docs/display.md)).
+* Optional bundled **Spoolman** filament inventory: Moonraker subtracts
+  each print's filament from the active spool. Its UI is available through
+  Home Assistant only.
 * Reproducible **MCU firmware builds** that match the bundled Klipper
   version exactly. Firmware is never flashed automatically.
 * Pinned and verified upstream versions. Releases are published to GHCR

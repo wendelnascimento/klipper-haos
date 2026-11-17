@@ -3,6 +3,32 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## Bundled Spoolman (v0.2.0, before release) — 2026-11-17
+
+Local only, on the maintainer's Windows PC with Docker Desktop. **Not yet
+run on Home Assistant OS or with a printer.**
+
+* `tools/verify-all.sh`: every layer passed (image build, static checks,
+  unit tests, both firmware builds, both profile validations, integration
+  tests 65/65).
+* New integration checks (option `spoolman`): off by default and not
+  running, `/spoolman/` explains how to enable it; with the option on the
+  API and UI answer through the fake ingress, the deep-link fallback and
+  its assets use the ingress prefix, `/spoolman` redirects inside it,
+  a same-origin write is accepted and a cross-origin write refused (403),
+  Moonraker connects and proxies Spoolman requests, the database is in
+  `/data/spoolman` and survives a restart, the pre-backup snapshot is
+  written, the direct port returns 404 and port 7912 is not reachable from
+  other containers, no false "not mounted" warning, and crash-loop
+  protection stops Spoolman after 5 crashes while Moonraker stays up.
+* Idle memory in the test container: 56 MiB without Spoolman, 128 MiB with
+  it; CPU under 1 % in both cases.
+* Manual browser check through the fake ingress: Spoolman's UI rendered
+  and all its assets and API calls under
+  `/api/hassio_ingress/testtoken/spoolman/` returned 200. Mainsail listed
+  the `spoolman` component as healthy, and its "Open Spoolman" link
+  resolved to the ingress URL.
+
 ## Real printer: Ender 3 V3 SE on Home Assistant OS — 2026-11-14 to 2026-11-15
 
 Environment: the target host from the runs below (HAOS 18.2, 2 CPU cores,
