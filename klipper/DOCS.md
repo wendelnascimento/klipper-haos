@@ -104,8 +104,9 @@ Things to know:
   nightly copies in `/data/spoolman/backups`.
 * Spoolman checks the online SpoolmanDB catalog once an hour; its update
   check is turned off, because the app release pins the Spoolman version.
-* It uses about 75 MB of extra memory (measured idle in the test container) and
-  next to no CPU while idle.
+* It uses about 75 to 90 MB of extra memory (idle: 75 MB in the test
+  container, about 90 MB on a real Home Assistant OS host) and about 1 %
+  CPU while idle.
 * Turning the option off stops Spoolman but keeps the database, so turning
   it on again brings your spools back.
 

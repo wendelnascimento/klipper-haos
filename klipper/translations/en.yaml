@@ -29,6 +29,6 @@ configuration:
     description: >-
       Run the bundled Spoolman so Moonraker tracks how much filament is left
       on each spool. Open its web UI from Mainsail's Spoolman panel; it is
-      only reachable through Home Assistant. Uses about 75 MB more memory.
+      only reachable through Home Assistant. Uses up to about 90 MB more memory.
 network:
   7125/tcp: Mainsail and Moonraker API for slicers and external clients

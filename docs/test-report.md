@@ -3,10 +3,36 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## v0.2.0 with Spoolman on real Home Assistant OS — 2026-11-17
+
+Environment: the target host (HAOS 18.2), the maintainer's Ender 3 V3 SE
+connected and idle. Driven through the Supervisor API and a real ingress
+session (created the way the Home Assistant frontend does).
+
+| Check | Result |
+|---|---|
+| Update 0.1.3 → 0.2.0 from the store, with the Supervisor's pre-update backup | **Pass** (backup `addon_<id>_klipper_0.1.3` created, app started, Klipper *ready*) |
+| Turn on `spoolman`, other options unchanged, restart | **Pass**: Spoolman started, Moonraker reports `spoolman_connected: true`, Klipper *ready* |
+| App log | Spoolman migrations, SpoolmanDB catalog sync (9745 filaments) and Moonraker's connection logged; no "not mounted" warning, no nginx warnings |
+| Spoolman API and UI page through real ingress | **Pass** (200) |
+| Deep link (`/spoolman/spool/show/1`) uses the real ingress path, its assets load | **Pass** |
+| Write with the Home Assistant origin passes Spoolman's origin check | **Pass** (an empty body reaches validation, 422), confirming that Home Assistant's `X-Forwarded-Host` arrives |
+| Write with a foreign origin through ingress | **Pass**: refused (403) |
+| Spoolman through ingress without a Home Assistant session | **Pass**: refused by Home Assistant (401) |
+| Direct port 7125, `/spoolman/` | **Pass**: 404 |
+| Port 7912 from the LAN | **Pass**: no connection |
+| Vendor, filament and spool created through Moonraker's Spoolman proxy, spool set active | **Pass**: Moonraker reports `spool_id: 1` |
+| Memory and CPU (Supervisor statistics, one sample, idle) | 143.8 MiB, 1.05 % CPU (55.5 MiB idle without Spoolman on 0.1.1, see below) |
+
+Not tested yet: a print with an active spool (filament use reported to
+Spoolman), the Spoolman UI and Mainsail's Spoolman panel in a browser on
+Home Assistant, the pre-backup snapshot on HAOS, and restoring a backup
+that contains Spoolman data.
+
 ## Bundled Spoolman (v0.2.0, before release) — 2026-11-17
 
-Local only, on the maintainer's Windows PC with Docker Desktop. **Not yet
-run on Home Assistant OS or with a printer.**
+Local, on the maintainer's Windows PC with Docker Desktop, before the
+release.
 
 * `tools/verify-all.sh`: every layer passed (image build, static checks,
   unit tests, both firmware builds, both profile validations, integration
