@@ -6,6 +6,17 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+### Fixed
+
+- Ender 3 V3 SE display (`display.cfg`): an MCU error while Klipper
+  connects no longer crashes Klipper with `TypeError:
+  E3v3seDisplay.handle_mcu_error() takes 1 positional argument but 3 were
+  given` ("Unhandled exception during run"), which only `FIRMWARE_RESTART`
+  cleared. Current Klipper sends `klippy:notify_mcu_error` with a message
+  and a details dict; the display module from the fork expected neither.
+  It is now patched to accept them and never raise from that handler, and
+  its error popup shows the message text. Not yet tested on the printer.
+
 ## [0.2.1] - 2026-11-25
 
 ### Added

@@ -1,0 +1,45 @@
+Klipper HAOS: accept the arguments of "klippy:notify_mcu_error".
+Applied to the pinned e3v3se_display.py from the ender3-v3-se-klipper-with-display
+fork in klipper/Dockerfile (GPL-3.0 section 5a notice).
+
+Upstream Klipper calls send_event("klippy:notify_mcu_error", msg, {"error": ...})
+and get_state_message() returns (message, category). The fork still registers a
+zero-argument handler, so an MCU error during connect raised a TypeError inside
+klippy._connect() and Klipper shut down with "Unhandled exception during run".
+The handler now takes the arguments and never raises, and the error-state popup
+gets the message text instead of the tuple.
+
+diff --git a/klippy/extras/e3v3se_display.py b/klippy/extras/e3v3se_display.py
+index b9170cf..80eb06d 100644
+--- a/klippy/extras/e3v3se_display.py
++++ b/klippy/extras/e3v3se_display.py
+@@ -662,8 +662,17 @@ class E3v3seDisplay:
+         except Exception as e: 
+             self.error("Error registering M117: %s" % e)
+ 
+-    def handle_mcu_error(self):
+-        self.show_popup(self.printer.get_state_message())
++    def handle_mcu_error(self, *args):
++        # Klipper sends "klippy:notify_mcu_error" with (msg, details). This
++        # runs inside Klipper's connect error path, so it must never raise.
++        try:
++            if args:
++                message = args[0]
++            else:
++                message = self.printer.get_state_message()[0]
++            self.show_popup(message)
++        except Exception as e:
++            self.error("Error in handle_mcu_error: %s" % e)
+ 
+     def cmd_M117(self, gcmd):
+         msg = gcmd.get_raw_command_parameters() or None
+@@ -4375,7 +4384,8 @@ class E3v3seDisplay:
+             elif self.pd.status in ["operational", "complete", "standby", "cancelled"]:
+                 self.Goto_MainMenu()
+             elif self.pd.status == "error":
+-                self.show_popup(self.printer.get_state_message())
++                # get_state_message() returns (message, category).
++                self.show_popup(self.printer.get_state_message()[0])
+ 
+         if self.is_manual_probe_active():
+             if self.checkkey != self.ManualProbeProcess:

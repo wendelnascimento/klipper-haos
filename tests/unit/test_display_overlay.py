@@ -97,6 +97,33 @@ def test_overlay_names_existing_lock_and_patch():
     assert removed == []
 
 
+def test_host_patches_only_touch_pinned_display_modules():
+    _, _, files = parse_lock()
+    patches = sorted((ROOT / "klipper" / "e3v3se-display" / "patches").glob("*.patch"))
+    assert patches, "no display patches found"
+    for patch in patches:
+        text = patch.read_text(encoding="utf-8")
+        assert "GPL-3.0 section 5a" in text.split("diff --git", 1)[0], patch.name
+        for path in re.findall(r"^\+\+\+ b/(\S+)", text, flags=re.M):
+            assert path in files and path.startswith("klippy/extras/"), (patch.name, path)
+    # Applied after the verified files are fetched, and before compileall.
+    dockerfile = (ROOT / "klipper" / "Dockerfile").read_text(encoding="utf-8")
+    fetch = dockerfile.index("RUN sh /tmp/build/fetch-e3v3se-display.sh")
+    apply = dockerfile.index("git -C /opt/klipper apply --check")
+    assert fetch < apply < dockerfile.index("compileall -q /opt/klipper/klippy")
+
+
+def test_mcu_error_handler_accepts_event_arguments():
+    # Upstream: send_event("klippy:notify_mcu_error", msg, {"error": ...}).
+    patch = ROOT / "klipper/e3v3se-display/patches/0001-notify-mcu-error-args.patch"
+    added = [
+        line[1:].strip() for line in patch.read_text(encoding="utf-8").splitlines()
+        if line.startswith("+") and not line.startswith("+++")
+    ]
+    assert "def handle_mcu_error(self, *args):" in added
+    assert "except Exception as e:" in added
+
+
 def test_display_profile_is_optional_and_matches_firmware_bridge():
     text = (PROFILE / "display.cfg").read_text(encoding="utf-8")
     assert "[e3v3se_display]" in text

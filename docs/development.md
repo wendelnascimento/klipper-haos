@@ -11,6 +11,7 @@ klipper-haos/
 │   ├── requirements/            exact Python constraints + security overrides,
 │   │                            e3v3se-display.lock (pinned display files)
 │   ├── build/                   build-time helper scripts
+│   ├── e3v3se-display/patches/  fixes applied to the pinned display modules
 │   ├── mainsail/mainsail-settings.json  Mainsail runtime config (served as /config.json)
 │   ├── rootfs/                  copied into the image
 │   │   ├── etc/s6-overlay/      s6-rc services + user bundle
@@ -114,7 +115,9 @@ in `klipper/requirements/e3v3se-display.lock`, and fetched at build time by
 `klipper/build/fetch-e3v3se-display.sh`, which also refuses to overwrite
 any upstream Klipper file.
 
-* `klippy/...` entries go into the app image (`klipper/Dockerfile`).
+* `klippy/...` entries go into the app image (`klipper/Dockerfile`),
+  followed by `klipper/e3v3se-display/patches/*.patch` (fixes for the
+  current Klipper API; the build fails if one no longer applies).
 * `src/...` entries, plus `firmware/overlays/e3v3se-display.patch` (the
   Kconfig and Makefile lines), are added to upstream Klipper only for the
   `ender3-v3-se-display` firmware variant. `tools/build-firmware.sh`
@@ -130,7 +133,10 @@ To move to a newer fork commit:
    differ): `git show <commit>:<path> | sha256sum`.
 3. Check that the fork's Klipper API use still matches the upstream commit
    in the Dockerfile, especially `mcu.register_serial_response`,
-   `virtual_sdcard`, `manual_probe` and `buttons`.
+   `virtual_sdcard`, `manual_probe` and `buttons`, and the arguments of
+   the events it handles (`klippy:notify_mcu_error` passes `msg, details`).
+   Drop a patch from `klipper/e3v3se-display/patches/` once the fork has
+   the same fix, or refresh it against the new files.
 4. Run all test layers, including both firmware builds and the
    `display.cfg` profile check, and update `THIRD_PARTY_NOTICES.md`, the
    changelog and the expected MCU version in `display.md`.

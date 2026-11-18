@@ -106,6 +106,13 @@ RUN git clone --filter=blob:none https://github.com/Klipper3d/klipper.git /opt/k
 COPY build/fetch-e3v3se-display.sh /tmp/build/fetch-e3v3se-display.sh
 RUN sh /tmp/build/fetch-e3v3se-display.sh \
         /tmp/requirements/e3v3se-display.lock /opt/klipper klippy
+# Small fixes for the current upstream Klipper API, applied on top of the
+# verified files (see the patch headers). --check first, so a fork or Klipper
+# change fails the build instead of silently skipping a patch.
+COPY e3v3se-display/patches /tmp/e3v3se-display-patches
+RUN for p in /tmp/e3v3se-display-patches/*.patch; do \
+        git -C /opt/klipper apply --check "${p}" && git -C /opt/klipper apply "${p}" || exit 1; \
+    done
 
 RUN python3 -m venv /opt/venv/klippy \
     && /opt/venv/klippy/bin/pip install \

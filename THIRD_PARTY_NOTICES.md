@@ -12,7 +12,7 @@ own license; the MIT license does not replace or override any of them.
 | Klipper (host software, `klippy`) | commit `29d4ec2d6d84` (`v0.13.0-827-g29d4ec2d`) | GPL-3.0 | https://github.com/Klipper3d/klipper |
 | Moonraker | `v0.11.0` (commit `985c1d0bbeb9`) | GPL-3.0-only | https://github.com/Arksine/moonraker |
 | Mainsail (built from source) | `v2.19.0` (commit `5fb9e77fb9f4`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail |
-| Ender 3 V3 SE display modules (`e3v3se_display`, `TJC3224`, `printerInterface`, `serial_bridge` in `klippy/extras`) | commit `d74d36bb69bd` of the fork, files listed with SHA-256 in `klipper/requirements/e3v3se-display.lock` | GPL-3.0 | https://github.com/jpcurti/ender3-v3-se-klipper-with-display |
+| Ender 3 V3 SE display modules (`e3v3se_display`, `TJC3224`, `printerInterface`, `serial_bridge` in `klippy/extras`) | commit `d74d36bb69bd` of the fork, files listed with SHA-256 in `klipper/requirements/e3v3se-display.lock`, plus `klipper/e3v3se-display/patches/*.patch` | GPL-3.0 | https://github.com/jpcurti/ender3-v3-se-klipper-with-display |
 | mainsail-config (client macros) | `v1.2.1` (commit `e57810d51b5c`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail-config |
 | Spoolman (optional, off by default; release archive with its built web client) | `v0.27.1` (archive SHA-256 in `klipper/Dockerfile`) | MIT | https://github.com/Donkie/Spoolman |
 | Home Assistant base image (Alpine, s6-overlay, bashio, tempio) | `base-python:3.13-alpine3.23` (digest pinned in the Dockerfile) | Apache-2.0 (image tooling), plus the licenses of the Alpine packages it contains | https://github.com/home-assistant/docker-base |
@@ -46,6 +46,12 @@ distributing these programs, so the project:
   repository. At
   runtime nginx replaces the placeholder string `/__KHAOS_BASE__` in the
   served files with the actual URL prefix;
+* ships the display modules with **one modification**,
+  `klipper/e3v3se-display/patches/0001-notify-mcu-error-args.patch`
+  (November 2026): `e3v3se_display.py` accepts the arguments current
+  Klipper passes with `klippy:notify_mcu_error`, so an MCU error during
+  connect no longer crashes Klipper. The complete corresponding source is
+  the fork commit plus that patch;
 * pins every component to an exact commit so the corresponding source can
   always be identified;
 * keeps the build recipe (`klipper/Dockerfile`) public, which is the
