@@ -61,6 +61,73 @@ Moonraker-based Home Assistant integrations (for example the community
 "Moonraker" integration) can connect to `http://<home-assistant-ip>:7125`
 with the API key once the direct port is enabled.
 
+### Print notifications on your phone
+
+Moonraker's notifier can tell Home Assistant when a print starts, pauses,
+resumes, finishes, fails or is cancelled. Home Assistant then sends a push
+notification through its mobile app. This needs no extra app permission,
+no Home Assistant token and no open port: the app reaches Home Assistant
+at `http://homeassistant:8123` on the internal app network.
+
+1. **Create the automation** in Home Assistant (*Settings → Automations →
+   Create → Edit in YAML*). Replace `<your-webhook-id>` with a long random
+   string, and `notify.mobile_app_your_phone` with your phone's notify
+   action (*Developer tools → Actions*, search for `mobile_app`).
+
+   ```yaml
+   alias: "3D printer: Klipper notifications"
+   mode: queued
+   triggers:
+     - trigger: webhook
+       webhook_id: <your-webhook-id>
+       allowed_methods: [POST]
+       local_only: true
+   actions:
+     - action: notify.mobile_app_your_phone
+       data:
+         title: "{{ trigger.json.title | default('3D printer', true) }}"
+         message: "{{ trigger.json.message | default('Printer event', true) }}"
+         data:
+           group: 3d-printer
+           push:
+             # iPhone: failed and cancelled prints break through Focus modes.
+             interruption-level: >-
+               {{ 'time-sensitive' if (trigger.json.title | default(''))
+                  is search('failed|cancelled', ignorecase=True) else 'active' }}
+   ```
+
+2. **Add the notifier** at the end of `moonraker.conf` (Mainsail →
+   *Machine*), with the same webhook id:
+
+   ```ini
+   [notifier phone]
+   url: json://homeassistant:8123/api/webhook/<your-webhook-id>
+   events: started, paused, resumed, complete, error, cancelled
+   title:
+       {% if event_name == "complete" %}Print finished
+       {% elif event_name == "error" %}Print failed
+       {% elif event_name == "cancelled" %}Print cancelled
+       {% elif event_name == "paused" %}Print paused
+       {% elif event_name == "resumed" %}Print resumed
+       {% else %}Print started{% endif %}
+   body:
+       {% set stats = event_args[1] %}
+       {stats.filename.split("/")|last}
+       {% if event_name in ["complete", "error", "cancelled"] %}Print time: {(stats.print_duration / 3600)|int} h {((stats.print_duration % 3600) / 60)|int} min.{% endif %}
+       {% if event_name == "error" and stats.message %}{stats.message}{% endif %}
+   ```
+
+3. **Restart the app** while the printer is idle (*Settings → Apps →
+   Klipper → Restart*). Moonraker reads `moonraker.conf` only at start.
+
+The webhook id is the only secret. With `local_only: true`, only devices
+on your local network can call it, but any of them that knows the id can
+send you a notification. Do not use a short or guessable id.
+
+Not covered: if the app or the whole Home Assistant host stops, nothing is
+left to send a message. Home Assistant can alert on that separately, for
+example when the app's *Running* entity turns off.
+
 ## Updates
 
 * App updates replace the container. **A running print stops** when the app

@@ -3,6 +3,29 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## Print notifications to the Home Assistant app — 2026-11-21
+
+Environment: the target host (HAOS 18.2, Home Assistant Core 2026.7.4),
+app 0.2.0, the maintainer's Ender 3 V3 SE. Set up as described in
+[installation → print notifications](installation.md#print-notifications-on-your-phone):
+an automation with a webhook trigger (`local_only: true`) that calls the
+iPhone's `mobile_app` notify action, and a `[notifier phone]` section in
+`moonraker.conf` with an Apprise `json://homeassistant:8123/...` URL.
+
+| Check | Result |
+|---|---|
+| Webhook called from the LAN with the JSON shape Apprise sends | **Pass**: HTTP 200; the automation ran and the notify action finished without error |
+| Moonraker loads the notifier after a restart (idle printer) | **Pass**: `Registered notifier: 'phone'` (Apprise 1.13.0), no Moonraker warnings |
+| App reaches Home Assistant as `homeassistant:8123` on the internal network | **Pass**: the webhook triggered from the app, no port mapping or token needed |
+| End to end with a test job (`M118` and a 5 s `G4` dwell; no motion, no heating) | **Pass**: two automation runs. Rendered notifications: "Print started" / file name, and "Print finished" / file name and "Print time: 0 h 0 min." |
+| A job that ends within Moonraker's status interval (no dwell) | No events: Moonraker never saw the job as printing. Real prints are not affected |
+
+Whether the notifications appeared on the phone is up to the maintainer to
+confirm; Home Assistant reports them as sent. Not tested: the `error`,
+`cancelled`, `paused` and `resumed` events with a real print (the
+templates were rendered offline with sample data), and the time-sensitive
+delivery of failed and cancelled prints.
+
 ## v0.2.0 with Spoolman on real Home Assistant OS — 2026-11-17
 
 Environment: the target host (HAOS 18.2), the maintainer's Ender 3 V3 SE

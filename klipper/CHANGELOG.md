@@ -6,6 +6,13 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+### Documentation
+
+- How to send print notifications (started, paused, resumed, finished,
+  failed, cancelled) to the Home Assistant mobile app with Moonraker's
+  notifier and a webhook automation, without extra app permissions or
+  tokens (`docs/installation.md`). Tested on real Home Assistant OS.
+
 ## [0.2.0] - 2026-11-17
 
 ### Added
