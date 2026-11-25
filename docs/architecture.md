@@ -161,7 +161,14 @@ no authentication, so only the ingress server serves it; the direct port
 answers 404. Moonraker talks to `127.0.0.1:7912` directly, and Mainsail
 reads spool data through Moonraker. Mainsail's "Open Spoolman" button is
 patched to open `<base>/spoolman/`, because upstream would open port 7912
-on the Home Assistant host.
+on the Home Assistant host. A second patch lets macros open Mainsail's
+spool picker: the generated `_KHAOS_SPOOLMAN_SELECT` sends
+`RESPOND TYPE=command MSG="action:khaos_spoolman_select"`, and a small
+global component opens the *Change Spool* dialog for such a console line
+if it is less than 30 s old (so console history loaded with the page never
+reopens it). `_KHAOS_SPOOLMAN_EJECT` calls Moonraker's
+`spoolman_set_active_spool` with no spool. With the option off both hooks
+are empty, so the profile can call them unconditionally.
 
 ## Resource use
 

@@ -165,6 +165,7 @@ else
     fail "Spoolman off by default: /spoolman/ returned ${code}"
 fi
 check "Spoolman not running when the option is off" bash -c "! docker exec ${APP} pgrep -f spoolman_run.py"
+check "filament-macro Spoolman hooks are no-ops when the option is off" bash -c "grep -q '_KHAOS_SPOOLMAN_EJECT' '${WORK}/config/klipper-haos/generated.cfg' && ! grep -q 'action_call_remote_method' '${WORK}/config/klipper-haos/generated.cfg'"
 check "ingress port rejects other source addresses (403)" bash -c "[[ \$(docker exec ${APP} curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8099/) == 403 ]]"
 
 echo "== Authentication on the direct port"
@@ -293,6 +294,7 @@ check "Moonraker is connected to Spoolman" wait_for 30 mr_connected
 check "Moonraker proxies Spoolman requests" bash -c "curl -sf -X POST -H 'Content-Type: application/json' \
     -d '{\"request_method\": \"GET\", \"path\": \"/v1/spool/1\"}' '${INGRESS}/server/spoolman/proxy' | grep -q 'Test PLA'"
 check "Spoolman database stored in /data/spoolman" test -f "${WORK}/data/spoolman/spoolman.db"
+check "filament-macro Spoolman hooks call Moonraker and Mainsail when on" bash -c "grep -q 'spoolman_set_active_spool' '${WORK}/config/klipper-haos/generated.cfg' && grep -q 'action:khaos_spoolman_select' '${WORK}/config/klipper-haos/generated.cfg'"
 code=$(http_code "${DIRECT}/spoolman/api/v1/spool")
 if [[ "${code}" == "404" ]]; then pass "direct port does not serve Spoolman (404)"; else fail "direct port Spoolman returned ${code}"; fi
 code=$(docker exec "${PROXY}" sh -c 'wget -q -O /dev/null -T 3 http://172.30.33.10:7912/spoolman/api/v1/info; echo $?' || true)

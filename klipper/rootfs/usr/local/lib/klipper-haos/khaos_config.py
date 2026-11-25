@@ -205,7 +205,61 @@ def render_klipper_generated(opts: Options, paths: Paths) -> str:
             "# error until you select the printer's serial device.",
             "",
         ]
+    lines += SPOOLMAN_MACROS_ON if opts.spoolman else SPOOLMAN_MACROS_OFF
     return "\n".join(lines)
+
+
+# Hooks for the profile's filament macros (UNLOAD_FILAMENT, LOAD_FILAMENT).
+# Always defined, so the profile can call them unconditionally. Without
+# Spoolman they do nothing: Moonraker's spoolman_set_active_spool does not
+# exist then, and Klipper would log a "Remote Call Error" traceback in
+# klippy.log at every unload (the macro itself carries on).
+SPOOLMAN_MACROS_OFF = [
+    "# Spoolman hooks for the filament macros. The app option 'spoolman' is",
+    "# off, so they do nothing.",
+    "[gcode_macro _KHAOS_SPOOLMAN_EJECT]",
+    "description: Clear Spoolman's active spool (Spoolman is off: does nothing)",
+    "gcode:",
+    "    # app option 'spoolman' is off",
+    "",
+    "[gcode_macro _KHAOS_SPOOLMAN_SELECT]",
+    "description: Open the spool picker in Mainsail (Spoolman is off: does nothing)",
+    "gcode:",
+    "    # app option 'spoolman' is off",
+    "",
+]
+
+SPOOLMAN_MACROS_ON = [
+    "# Spoolman (app option 'spoolman'). The hooks are used by the profile's",
+    "# filament macros; SET_ACTIVE_SPOOL / CLEAR_ACTIVE_SPOOL are for slicer",
+    "# start G-code and your own macros.",
+    "[gcode_macro _KHAOS_SPOOLMAN_EJECT]",
+    "description: Clear Spoolman's active spool",
+    "gcode:",
+    '    {action_call_remote_method("spoolman_set_active_spool", spool_id=None)}',
+    '    RESPOND MSG="Spoolman: no active spool. Filament use is not tracked until you choose one."',
+    "",
+    "[gcode_macro _KHAOS_SPOOLMAN_SELECT]",
+    "description: Open the spool picker in every open Mainsail",
+    "gcode:",
+    '    RESPOND TYPE=command MSG="action:khaos_spoolman_select"',
+    '    RESPOND MSG="Spoolman: choose the loaded spool in Mainsail."',
+    "",
+    "[gcode_macro SET_ACTIVE_SPOOL]",
+    "description: Set Spoolman's active spool. Params: ID",
+    "gcode:",
+    "    {% set spool_id = params.ID|default(0)|int %}",
+    "    {% if spool_id <= 0 %}",
+    '        {action_raise_error("SET_ACTIVE_SPOOL: give the spool number, for example SET_ACTIVE_SPOOL ID=3")}',
+    "    {% endif %}",
+    '    {action_call_remote_method("spoolman_set_active_spool", spool_id=spool_id)}',
+    "",
+    "[gcode_macro CLEAR_ACTIVE_SPOOL]",
+    "description: Clear Spoolman's active spool",
+    "gcode:",
+    '    {action_call_remote_method("spoolman_set_active_spool", spool_id=None)}',
+    "",
+]
 
 
 def render_moonraker_generated(opts: Options, paths: Paths) -> str:

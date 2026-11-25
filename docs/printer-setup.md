@@ -199,8 +199,8 @@ Things the profile deliberately leaves unsafe-to-print until you calibrate:
 
 | Command | What it does |
 |---|---|
-| `LOAD_FILAMENT [TEMP=] [LENGTH=] [PURGE=]` | Heats, feeds the filament to the nozzle (40 mm) and purges 30 mm |
-| `UNLOAD_FILAMENT [TEMP=] [LENGTH=]` | Heats, softens the tip, then pulls the filament out of the gears (60 mm in total) |
+| `LOAD_FILAMENT [TEMP=] [LENGTH=] [PURGE=] [SELECT_SPOOL=]` | Heats, feeds the filament to the nozzle (40 mm) and purges 30 mm. With Spoolman, first opens the spool picker |
+| `UNLOAD_FILAMENT [TEMP=] [LENGTH=] [EJECT_SPOOL=]` | Heats, softens the tip, then pulls the filament out of the gears (60 mm in total). With Spoolman, then clears the active spool |
 | `PURGE [TEMP=] [LENGTH=]` | Heats and extrudes 30 mm. Raises a homed nozzle to at least 10 mm first |
 | `M600 [X..] [Y..] [Z..]` | Filament change during a print: `PAUSE`, park at least 50 mm above the bed, unload |
 
@@ -218,6 +218,16 @@ remove the purged strand and press *Resume*. Finish within 30 minutes: when
 `idle_timeout` turns the motors off the printer loses its position, and the
 print cannot be resumed.
 
+**With Spoolman** (app option `spoolman`): `UNLOAD_FILAMENT` clears
+Spoolman's active spool when the filament is out (`M600` too, because it
+unloads). `LOAD_FILAMENT` opens Mainsail's *Change Spool* dialog in every
+open Mainsail before it heats, so you can pick the new spool while the
+nozzle warms up; filament is counted against a spool only while one is
+active. Skip either step with `EJECT_SPOOL=0` or `SELECT_SPOOL=0`. The
+dialog needs Mainsail open somewhere (in the Home Assistant sidebar or on
+the direct port); loading from the printer's display opens it there too.
+Without Spoolman the macros behave as before.
+
 **Adjusting:** the lengths are starting values. Copy the
 `[gcode_macro _KHAOS_FILAMENT_SETTINGS]` section from `filament.cfg` into
 `/config/printer.cfg`, below the profile include, and change the values
@@ -231,6 +241,13 @@ existing profile folder, but does not change your copy of the profile's
 ```ini
 [include filament.cfg]
 ```
+
+**Spoolman in the filament macros (app 0.2.1):** the app does not replace
+your copy of `filament.cfg`. If you never edited it, replace
+`/config/profiles/ender3-v3-se/filament.cfg` with the new version from
+`/config/klipper-haos/dist/profiles/ender3-v3-se/filament.cfg` and restart
+Klipper. If you did, compare the two files and copy over the
+`EJECT_SPOOL` / `SELECT_SPOOL` lines.
 
 ### Stepper drivers
 

@@ -58,10 +58,15 @@ if [[ -n "${NEG_FW_DIR}" ]]; then
     NEG_FW_DIR="$(cd "${NEG_FW_DIR}" && pwd)"
 fi
 
-run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [firmware-dir]
+run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [firmware-dir] [extra-cfg]
     # ok: exit 0 and, if a pattern is given, the output contains it.
     # error: non-zero exit and the output contains the pattern.
-    local name="$1" gcode="$2" expect="$3" pattern="${4:-}" fw="${5:-${FW_DIR}}" output rc
+    # extra-cfg: a .cfg file in tests/profile, or SPOOLMAN_MACROS_ON /
+    #   SPOOLMAN_MACROS_OFF for the app's generated Spoolman hooks, appended
+    #   to printer.cfg.
+    local name="$1" gcode="$2" expect="$3" pattern="${4:-}" fw="${5:-${FW_DIR}}" extra="${6:-}" output rc
+    [[ "${extra}" =~ ^([A-Za-z0-9_.-]+\.cfg|SPOOLMAN_MACROS_ON|SPOOLMAN_MACROS_OFF)?$ ]] \
+        || { echo "Invalid extra cfg: ${extra}" >&2; return 1; }
     set +e
     output=$(docker run --rm --entrypoint sh \
         -v "$(host_path "${PROFILES}"):/profiles:ro" \
@@ -99,6 +104,13 @@ EOF
             if [ -f /tests/main-${PRINTER}.cfg ]; then
                 { echo; cat /tests/main-${PRINTER}.cfg; } >> /config/printer.cfg
             fi
+            case '${extra}' in
+                '') ;;
+                SPOOLMAN_MACROS_*)
+                    echo >> /config/printer.cfg
+                    /opt/venv/moonraker/bin/python -c 'import sys; sys.path.insert(0, \"/usr/local/lib/klipper-haos\"); import khaos_config as k; print(chr(10).join(getattr(k, sys.argv[1])))' '${extra}' >> /config/printer.cfg ;;
+                *) { echo; cat '/tests/${extra}'; } >> /config/printer.cfg ;;
+            esac
             rc=0
             /opt/venv/klippy/bin/python /opt/klipper/klippy/klippy.py \
                 /config/printer.cfg -i /tests/${gcode} -o /dev/null \
@@ -139,6 +151,14 @@ run_case "filament moves longer than max_extrude_only_distance are refused" fila
     "exceeds max_extrude_only_distance" || failed=1
 run_case "M600 refuses parameters it cannot parse" filament-m600-syntax.gcode error \
     "M600: use numbers" || failed=1
+run_case "Spoolman hooks: picker before loading, eject after unloading, opt-outs" spoolman-hooks.gcode ok \
+    "" "${FW_DIR}" spoolman-hooks.cfg || failed=1
+run_case "filament macros unchanged with the app's Spoolman hooks off" filament.gcode ok \
+    "" "${FW_DIR}" SPOOLMAN_MACROS_OFF || failed=1
+# Batch mode has no Moonraker, so the call is logged as not registered:
+# proof that the hook really calls it (Klipper logs the error and goes on).
+run_case "with Spoolman on, UNLOAD_FILAMENT calls Moonraker's spoolman_set_active_spool" spoolman-unload.gcode ok \
+    "Remote method 'spoolman_set_active_spool' not registered" "${FW_DIR}" SPOOLMAN_MACROS_ON || failed=1
 if [[ -n "${NEG_FW_DIR}" ]]; then
     [[ -f "${NEG_FW_DIR}/klipper.dict" ]] || { echo "Missing ${NEG_FW_DIR}/klipper.dict" >&2; exit 1; }
     run_case "Klipper refuses to start with firmware $(cat "${NEG_FW_DIR}/klipper-version.txt") (no serial bridge)" \

@@ -91,6 +91,12 @@ subtracts it from the active spool.
    Mainsail's start-print dialog also shows the active spool and lets you
    change it.
 
+With the Ender 3 V3 SE profile, `UNLOAD_FILAMENT` clears the active spool
+and `LOAD_FILAMENT` opens the spool picker in Mainsail, so a filament
+change also changes the spool. See `docs/printer-setup.md` in the project
+repository; profile copies from 0.2.0 or earlier need the new
+`filament.cfg`.
+
 Things to know:
 
 * Spoolman's UI is only available through Home Assistant (ingress), because

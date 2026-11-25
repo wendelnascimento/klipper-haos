@@ -33,14 +33,16 @@ distributing these programs, so the project:
   image (Python and configuration files under `/opt`), together with their
   license files (`/opt/klipper/COPYING`, `/opt/moonraker/LICENSE`,
   `/opt/mainsail-config/LICENSE`);
-* builds Mainsail from the exact upstream tag listed above with **one
-  modification**, `klipper/mainsail/patches/0001-spoolman-url.patch`
-  (November 2026): the "Open Spoolman" button opens the Spoolman bundled
-  in this app under the app's own base path instead of port 7912 on the
-  Moonraker host. The build uses `vite build --base=/__KHAOS_BASE__/` and
+* builds Mainsail from the exact upstream tag listed above with **two
+  modifications** in `klipper/mainsail/patches/` (November 2026):
+  `0001-spoolman-url.patch` makes the "Open Spoolman" button open the
+  Spoolman bundled in this app under the app's own base path instead of
+  port 7912 on the Moonraker host, and `0002-spoolman-select-from-macro.patch`
+  adds a component that opens Mainsail's spool picker when a macro sends
+  `action:khaos_spoolman_select`. The build uses `vite build --base=/__KHAOS_BASE__/` and
   the environment variable `VUE_APP_PATH=/__KHAOS_BASE__` (see
   `klipper/Dockerfile`). The complete corresponding source is the upstream
-  tag plus that patch and those build settings, which are part of this
+  tag plus those patches and build settings, which are part of this
   repository. At
   runtime nginx replaces the placeholder string `/__KHAOS_BASE__` in the
   served files with the actual URL prefix;

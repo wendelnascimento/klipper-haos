@@ -6,6 +6,19 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- With the `spoolman` option on, the Ender 3 V3 SE filament macros work
+  with Spoolman: `UNLOAD_FILAMENT` (and so `M600`) clears the active spool
+  once the filament is out, and `LOAD_FILAMENT` opens Mainsail's spool
+  picker before it heats, so the new spool is counted from the first
+  millimetre. `EJECT_SPOOL=0` / `SELECT_SPOOL=0` skip that. This includes
+  loading from the printer's own display. The picker opens through a
+  second Mainsail patch (a macro sends `action:khaos_spoolman_select`).
+  The app also defines `SET_ACTIVE_SPOOL ID=` and `CLEAR_ACTIVE_SPOOL` for
+  slicer start G-code. Existing profile copies need the new `filament.cfg`
+  (see `docs/printer-setup.md`). Not yet tested on the printer.
+
 ### Documentation
 
 - How to send print notifications (started, paused, resumed, finished,

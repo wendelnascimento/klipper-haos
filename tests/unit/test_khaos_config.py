@@ -176,6 +176,39 @@ def test_spoolman_section_points_at_the_bundled_instance(paths):
     assert "server: http://127.0.0.1:7912/spoolman\n" in section
 
 
+def test_spoolman_hooks_are_always_defined(paths):
+    # The profile's filament macros call them unconditionally.
+    for raw in ({}, {"spoolman": True}):
+        text = kc.render_klipper_generated(kc.parse_options(raw), paths)
+        assert "[gcode_macro _KHAOS_SPOOLMAN_EJECT]" in text
+        assert "[gcode_macro _KHAOS_SPOOLMAN_SELECT]" in text
+
+
+def test_spoolman_hooks_do_nothing_when_off(paths):
+    text = kc.render_klipper_generated(kc.parse_options({}), paths)
+    # Without [spoolman] the remote method does not exist; Klipper would
+    # log a traceback at every unload.
+    assert "action_call_remote_method" not in text
+    assert "khaos_spoolman_select" not in text
+    assert "SET_ACTIVE_SPOOL" not in text
+
+
+def test_spoolman_hooks_when_on(paths):
+    text = kc.render_klipper_generated(kc.parse_options({"spoolman": True}), paths)
+    eject = text.split("[gcode_macro _KHAOS_SPOOLMAN_EJECT]")[1].split("\n\n")[0]
+    assert 'action_call_remote_method("spoolman_set_active_spool", spool_id=None)' in eject
+    select = text.split("[gcode_macro _KHAOS_SPOOLMAN_SELECT]")[1].split("\n\n")[0]
+    # Must match the trigger in klipper/mainsail/patches/0002-*.patch.
+    assert 'MSG="action:khaos_spoolman_select"' in select
+    assert "[gcode_macro SET_ACTIVE_SPOOL]" in text
+    assert "[gcode_macro CLEAR_ACTIVE_SPOOL]" in text
+
+
+def test_spoolman_select_trigger_matches_mainsail_patch():
+    patch = (ROOT / "klipper" / "mainsail" / "patches" / "0002-spoolman-select-from-macro.patch")
+    assert "+const TRIGGER = '// action:khaos_spoolman_select'" in patch.read_text(encoding="utf-8")
+
+
 def test_klipper_generated_with_and_without_serial(paths):
     with_serial = kc.render_klipper_generated(
         kc.parse_options({"serial_device": "/dev/ttyUSB0"}), paths
