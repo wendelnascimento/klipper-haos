@@ -6,6 +6,8 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-11-25
+
 ### Added
 
 - With the `spoolman` option on, the Ender 3 V3 SE filament macros work
