@@ -3,6 +3,26 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## v0.2.1 filament macros with Spoolman on real Home Assistant OS — 2026-11-25
+
+Environment: the target host (HAOS 18.2), option `spoolman` on, the
+maintainer's Ender 3 V3 SE connected and idle after a finished print.
+Driven through the Supervisor API and the Moonraker API on the direct port.
+
+| Check | Result |
+|---|---|
+| Update 0.2.0 → 0.2.1 from the store, with the Supervisor's pre-update backup | **Pass** (backup `addon_<id>_klipper_0.2.0` created, app started, Klipper *ready*, `spoolman_connected: true`) |
+| `klipper-haos/generated.cfg` with the option on | **Pass**: `_KHAOS_SPOOLMAN_EJECT` calls `spoolman_set_active_spool`, `_KHAOS_SPOOLMAN_SELECT` sends `action:khaos_spoolman_select`, `SET_ACTIVE_SPOOL` / `CLEAR_ACTIVE_SPOOL` defined |
+| Unmodified profile `filament.cfg` replaced with the 0.2.1 copy from `klipper-haos/dist/profiles/`, Klipper restarted | **Pass**: Klipper *ready*; the loaded `LOAD_FILAMENT` calls the select hook, `UNLOAD_FILAMENT` the eject hook |
+| `_KHAOS_SPOOLMAN_SELECT` on its own (no heating, no motion) | **Pass**: console shows `// action:khaos_spoolman_select` and the hint |
+| `_KHAOS_SPOOLMAN_EJECT` on its own | **Pass**: Moonraker's active spool changed from 2 to none |
+| `SET_ACTIVE_SPOOL ID=2` | **Pass**: active spool 2 again |
+
+Not tested yet: a real `LOAD_FILAMENT` / `UNLOAD_FILAMENT` / `M600` on the
+printer (they heat and move filament), the spool picker opening in Mainsail
+in a browser on Home Assistant (checked in a browser against the test
+container only), and loading from the printer's own display.
+
 ## Print notifications to the Home Assistant app — 2026-11-21
 
 Environment: the target host (HAOS 18.2, Home Assistant Core 2026.7.4),
