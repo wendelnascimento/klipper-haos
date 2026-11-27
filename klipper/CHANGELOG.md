@@ -6,6 +6,8 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.2] - 2026-11-27
+
 ### Fixed
 
 - Ender 3 V3 SE display (`display.cfg`): an MCU error while Klipper

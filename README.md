@@ -8,7 +8,7 @@ no Raspberry Pi, no second operating system, no virtual machine and no
 unmanaged Docker containers. The Home Assistant Supervisor installs,
 updates, backs up and supervises it like any other app.
 
-> **Status: experimental (v0.2.1).** The app is tested automatically in
+> **Status: experimental (v0.2.2).** The app is tested automatically in
 > containers and runs on a real Home Assistant OS host. It has driven one
 > Ender 3 V3 SE through real prints, the longest 18 hours (see the
 > [test report](docs/test-report.md)). That is one printer, and the
