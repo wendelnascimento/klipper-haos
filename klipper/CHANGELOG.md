@@ -6,6 +6,25 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- Accelerometer input shaper calibration (`SHAPER_CALIBRATE`,
+  `TEST_RESONANCES`). New option `numpy` (off by default) puts numpy
+  2.5.5 on Klipper's import path; Klipper loads it only when a resonance
+  test runs. New option `adxl_serial_device` adds a USB accelerometer board
+  as a second MCU, `[mcu adxl]`; it may not be the printer's own device. The
+  Ender 3 V3 SE profile gets `adxl.cfg` for the Mellow FLY ADXL345 USB
+  (RP2040), with the test point at the bed centre (X 117, Y 117). Releases
+  now include its firmware, `fly-adxl345-usb-*-klipper.uf2`. The guide is
+  `docs/input-shaper-calibration.md`. Tested in containers and Klipper
+  batch mode; not yet tested on the printer.
+
+### Changed
+
+- The image is 16 MB larger to download (+51 MB on disk) because numpy is
+  bundled, even with the option off. Memory use does not change unless a
+  resonance test runs.
+
 ## [0.2.2] - 2026-11-27
 
 ### Fixed

@@ -34,7 +34,10 @@ run "unit tests" docker run --rm -v "${SRC}:/src:ro" -w /src -e PYTHONDONTWRITEB
     python:3.13-alpine sh -c 'pip install -q --root-user-action=ignore pytest==8.4.2 pyyaml==6.0.3 > /dev/null 2>&1 && python -m pytest -q -p no:cacheprovider tests/unit'
 run "firmware build" bash tools/build-firmware.sh ender3-v3-se
 run "firmware build (display variant)" bash tools/build-firmware.sh ender3-v3-se-display
+run "firmware build (USB accelerometer)" bash tools/build-firmware.sh fly-adxl345-usb
 run "profile validation" bash tests/profile/check-profile.sh "${IMAGE}" ender3-v3-se
+run "profile validation (accelerometer)" bash tests/profile/check-profile.sh "${IMAGE}" ender3-v3-se \
+    firmware/out/ender3-v3-se adxl.cfg "" adxl=firmware/out/fly-adxl345-usb
 run "profile validation (display)" bash tests/profile/check-profile.sh "${IMAGE}" ender3-v3-se \
     firmware/out/ender3-v3-se-display display.cfg firmware/out/ender3-v3-se
 run "integration tests" bash tests/integration/run.sh "${IMAGE}"

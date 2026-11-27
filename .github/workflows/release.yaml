@@ -138,9 +138,12 @@ jobs:
           mkdir -p dist/release
           # ender3-v3-se-display adds the serial bridge for the original
           # display (experimental); see firmware/ender3-v3-se-display/.
-          for variant in ender3-v3-se ender3-v3-se-display; do
+          # fly-adxl345-usb is the optional USB accelerometer (RP2040, UF2
+          # image instead of klipper.bin); see docs/input-shaper-calibration.md.
+          for variant in ender3-v3-se ender3-v3-se-display fly-adxl345-usb; do
             bash tools/build-firmware.sh "${variant}" "dist/${variant}"
-            for f in klipper.bin klipper.dict klipper.config.full klipper-version.txt; do
+            for f in klipper.bin klipper.uf2 klipper.dict klipper.config.full klipper-version.txt; do
+              [ -f "dist/${variant}/${f}" ] || continue
               mv "dist/${variant}/${f}" "dist/release/${variant}-${version}-${f}"
             done
             (cd dist/release && sha256sum "${variant}-${version}-"klipper* \
@@ -163,6 +166,8 @@ jobs:
             echo "- \`ender3-v3-se-*\`: standard firmware."
             echo "- \`ender3-v3-se-display-*\`: experimental, adds the serial bridge for the original display" \
               "(see docs/display.md)."
+            echo "- \`fly-adxl345-usb-*\`: optional Mellow FLY ADXL345 USB accelerometer (RP2040, \`.uf2\`)" \
+              "for SHAPER_CALIBRATE (see docs/input-shaper-calibration.md)."
             echo "Read docs/printer-setup.md before flashing. Flashing is never automatic."
           } >> release-notes.md
 

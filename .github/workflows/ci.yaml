@@ -73,8 +73,16 @@ jobs:
       - name: Build Ender 3 V3 SE display firmware variant (not flashed)
         run: bash tools/build-firmware.sh ender3-v3-se-display
 
+      - name: Build USB accelerometer firmware (not flashed)
+        run: bash tools/build-firmware.sh fly-adxl345-usb
+
       - name: Validate printer profile (Klipper batch mode)
         run: bash tests/profile/check-profile.sh klipper-haos:test ender3-v3-se
+
+      - name: Validate printer profile with the USB accelerometer (Klipper batch mode)
+        run: |
+          bash tests/profile/check-profile.sh klipper-haos:test ender3-v3-se \
+            firmware/out/ender3-v3-se adxl.cfg "" adxl=firmware/out/fly-adxl345-usb
 
       - name: Validate printer profile with the original display (Klipper batch mode)
         run: |

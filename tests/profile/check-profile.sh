@@ -3,7 +3,7 @@
 # Validate a printer profile without hardware, using Klipper's batch mode.
 #
 #   tests/profile/check-profile.sh <image> <printer> <firmware-dir> \
-#       [extra-includes] [firmware-dir-without-extras]
+#       [extra-includes] [firmware-dir-without-extras] [mcu-name=firmware-dir]
 #
 #   extra-includes   space-separated files in the profile directory that are
 #                    included after printer.cfg (for example "display.cfg")
@@ -11,6 +11,11 @@
 #                    a firmware build that lacks what the extras need; the
 #                    script then also checks that Klipper refuses to start
 #                    with it and names the missing MCU command
+#   mcu-name=firmware-dir
+#                    a second MCU the extras use (for example the USB
+#                    accelerometer: adxl=firmware/out/fly-adxl345-usb). It is
+#                    added as [mcu <name>] and its pins are checked against
+#                    that build's data dictionary, like the main MCU's.
 #
 # Klipper's batch mode ("-d <dict> -o <out>") loads printer.cfg, checks every
 # section and pin name against the MCU data dictionary produced by the
@@ -35,6 +40,7 @@ PROFILES="${ROOT}/klipper/rootfs/usr/share/klipper-haos/profiles"
 HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 EXTRAS="${4:-}"
 NEG_FW_DIR="${5:-}"
+EXTRA_MCU="${6:-}"
 includes=""
 for extra in ${EXTRAS}; do
     [[ "${extra}" =~ ^[A-Za-z0-9_.-]+\.cfg$ ]] || { echo "Invalid include: ${extra}" >&2; exit 1; }
@@ -57,6 +63,22 @@ if [[ -n "${NEG_FW_DIR}" ]]; then
     [[ -f "${NEG_FW_DIR}/klipper.dict" ]] || { echo "Missing ${NEG_FW_DIR}/klipper.dict" >&2; exit 1; }
     NEG_FW_DIR="$(cd "${NEG_FW_DIR}" && pwd)"
 fi
+extra_mcu_name=""
+extra_mcu_cfg=""
+extra_mcu_args=""
+extra_mcu_mount=()
+if [[ -n "${EXTRA_MCU}" ]]; then
+    extra_mcu_name="${EXTRA_MCU%%=*}"
+    extra_mcu_dir="${EXTRA_MCU#*=}"
+    [[ "${EXTRA_MCU}" == *=* && "${extra_mcu_name}" =~ ^[a-z0-9_]+$ ]] \
+        || { echo "Invalid extra MCU: ${EXTRA_MCU} (expected name=firmware-dir)" >&2; exit 1; }
+    [[ -f "${extra_mcu_dir}/klipper.dict" ]] || { echo "Missing ${extra_mcu_dir}/klipper.dict" >&2; exit 1; }
+    extra_mcu_dir="$(cd "${extra_mcu_dir}" && pwd)"
+    extra_mcu_mount=(-v "$(host_path "${extra_mcu_dir}"):/fw-extra:ro")
+    extra_mcu_args="-d ${extra_mcu_name}=/fw-extra/klipper.dict"
+    # In the app, generated.cfg sets this MCU's serial port.
+    extra_mcu_cfg="[mcu ${extra_mcu_name}]"$'\n'"serial: /dev/null"$'\n'
+fi
 
 run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [firmware-dir] [extra-cfg]
     # ok: exit 0 and, if a pattern is given, the output contains it.
@@ -72,6 +94,7 @@ run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [f
         -v "$(host_path "${PROFILES}"):/profiles:ro" \
         -v "$(host_path "${fw}"):/fw:ro" \
         -v "$(host_path "${HERE}"):/tests:ro" \
+        "${extra_mcu_mount[@]}" \
         "${IMAGE}" -c "
             set -e
             mkdir -p /config /tmp/gcodes
@@ -81,7 +104,7 @@ run_case() { # run_case <name> <gcode-file> <expect: ok|error> [grep-pattern] [f
 [virtual_sdcard]
 path: /tmp/gcodes
 [include profiles/${PRINTER}/printer.cfg]
-${includes}[mcu]
+${includes}${extra_mcu_cfg}[mcu]
 serial: /dev/null
 
 # Test-only assertions for the G-code files.
@@ -114,7 +137,7 @@ EOF
             rc=0
             /opt/venv/klippy/bin/python /opt/klipper/klippy/klippy.py \
                 /config/printer.cfg -i /tests/${gcode} -o /dev/null \
-                -d /fw/klipper.dict -l /tmp/klippy.log || rc=\$?
+                -d /fw/klipper.dict ${extra_mcu_args} -l /tmp/klippy.log || rc=\$?
             cat /tmp/klippy.log
             echo '===== /config/printer.cfg after the run ====='
             cat /config/printer.cfg
@@ -137,7 +160,7 @@ EOF
     return 1
 }
 
-echo "== Profile ${PRINTER}${EXTRAS:+ + ${EXTRAS}} (Klipper batch mode, firmware $(cat "${FW_DIR}/klipper-version.txt"))"
+echo "== Profile ${PRINTER}${EXTRAS:+ + ${EXTRAS}}${extra_mcu_name:+ + [mcu ${extra_mcu_name}]} (Klipper batch mode, firmware $(cat "${FW_DIR}/klipper-version.txt"))"
 failed=0
 run_case "config loads and basic motion/heater G-code runs" basic.gcode ok || failed=1
 run_case "START_PRINT is blocked before hardware validation" start-print-gate.gcode error \

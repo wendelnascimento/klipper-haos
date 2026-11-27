@@ -123,6 +123,22 @@ RUN python3 -m venv /opt/venv/klippy \
     && test -f /opt/klipper/klippy/chelper/c_helper.so \
     && /opt/venv/klippy/bin/python -m compileall -q /opt/klipper/klippy
 
+# --- numpy for accelerometer input shaper calibration (optional) ------------
+# A prebuilt, hash-pinned wheel in its own directory, not in the Klippy venv.
+# Klipper only gets it on its import path when the app option 'numpy' is on,
+# and imports it only when a resonance test runs.
+RUN /opt/venv/klippy/bin/pip install \
+        --only-binary=:all: --no-deps --require-hashes \
+        --target /opt/numpy \
+        -r /tmp/requirements/numpy.txt \
+    && rm -rf /opt/numpy/bin \
+    # numpy's own test suite, f2py and type stubs are never used (~20 MB).
+    && find /opt/numpy/numpy -depth -type d -name tests -exec rm -rf {} + \
+    && rm -rf /opt/numpy/numpy/f2py /opt/numpy/numpy/_pyinstaller \
+    && find /opt/numpy/numpy -name '*.pyi' -delete \
+    && PYTHONPATH=/opt/numpy /opt/venv/klippy/bin/python -c \
+        'import numpy; numpy.fft.rfft(numpy.ones(64)); print("numpy", numpy.__version__)'
+
 # --- Moonraker ---------------------------------------------------------------
 RUN git clone --depth 1 --branch "${MOONRAKER_VERSION}" \
         https://github.com/Arksine/moonraker.git /opt/moonraker \
@@ -177,6 +193,7 @@ RUN { \
         echo "mainsail_config=${MAINSAIL_CONFIG_VERSION}"; \
         echo "e3v3se_display=$(sed -n 's/^commit \(.\{12\}\).*/\1/p' /tmp/requirements/e3v3se-display.lock)"; \
         echo "spoolman=${SPOOLMAN_VERSION}"; \
+        echo "numpy=$(sed -n 's/^numpy==\([^ ]*\).*/\1/p' /tmp/requirements/numpy.txt)"; \
         echo "python=$(python3 -c 'import platform; print(platform.python_version())')"; \
     } > /opt/versions.txt \
     && /opt/venv/klippy/bin/pip freeze > /opt/klippy-freeze.txt \
@@ -204,6 +221,7 @@ RUN apk add --no-cache \
 COPY --from=python-build /opt/klipper /opt/klipper
 COPY --from=python-build /opt/moonraker /opt/moonraker
 COPY --from=python-build /opt/venv /opt/venv
+COPY --from=python-build /opt/numpy /opt/numpy
 COPY --from=python-build /opt/mainsail-config /opt/mainsail-config
 COPY --from=python-build /opt/spoolman /opt/spoolman
 COPY --from=python-build /opt/versions.txt /opt/klippy-freeze.txt /opt/moonraker-freeze.txt /opt/spoolman-freeze.txt /opt/

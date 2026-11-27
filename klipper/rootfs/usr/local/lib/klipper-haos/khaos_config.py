@@ -83,6 +83,8 @@ class Options:
     export_api_key: bool = False
     log_level: str = "info"
     spoolman: bool = False
+    numpy: bool = False
+    adxl_serial_device: str | None = None
 
 
 # --------------------------------------------------------------------------
@@ -90,16 +92,16 @@ class Options:
 # --------------------------------------------------------------------------
 
 
-def validate_serial(value: object) -> str | None:
+def validate_serial(value: object, name: str = "serial_device") -> str | None:
     if value in (None, ""):
         return None
     if not isinstance(value, str) or not SERIAL_RE.match(value):
         raise OptionsError(
-            f"serial_device {value!r} is not a valid device path "
+            f"{name} {value!r} is not a valid device path "
             "(expected something like /dev/serial/by-id/usb-...)"
         )
     if "/../" in value or value.endswith("/.."):
-        raise OptionsError("serial_device must not contain '..'")
+        raise OptionsError(f"{name} must not contain '..'")
     return value
 
 
@@ -162,13 +164,22 @@ def parse_options(raw: dict) -> Options:
     level = raw.get("log_level", "info")
     if level not in ("debug", "info", "warning", "error"):
         raise OptionsError(f"log_level {level!r} is not supported")
+    serial = validate_serial(raw.get("serial_device"))
+    adxl = validate_serial(raw.get("adxl_serial_device"), "adxl_serial_device")
+    if adxl is not None and adxl == serial:
+        raise OptionsError(
+            "adxl_serial_device must be the accelerometer board, not the "
+            "printer's serial_device"
+        )
     return Options(
-        serial_device=validate_serial(raw.get("serial_device")),
+        serial_device=serial,
         trusted_networks=validate_trusted_networks(raw.get("trusted_networks")),
         cors_domains=validate_cors(raw.get("cors_domains")),
         export_api_key=bool(raw.get("export_api_key", False)),
         log_level=level,
         spoolman=bool(raw.get("spoolman", False)),
+        numpy=bool(raw.get("numpy", False)),
+        adxl_serial_device=adxl,
     )
 
 
@@ -203,6 +214,15 @@ def render_klipper_generated(opts: Options, paths: Paths) -> str:
             "# No 'serial_device' is configured in the app options, so no MCU",
             "# serial port is set here. Klipper will report a configuration",
             "# error until you select the printer's serial device.",
+            "",
+        ]
+    if opts.adxl_serial_device:
+        lines += [
+            "[mcu adxl]",
+            "# From the app option 'adxl_serial_device': the USB accelerometer",
+            "# board (RP2040 running Klipper). Klipper waits for it at every start,",
+            "# so clear the option when the board is unplugged.",
+            f"serial: {opts.adxl_serial_device}",
             "",
         ]
     lines += SPOOLMAN_MACROS_ON if opts.spoolman else SPOOLMAN_MACROS_OFF
@@ -423,6 +443,12 @@ def generate(opts: Options, paths: Paths) -> list[str]:
     ):
         msgs.append("Updated klipper-haos/moonraker-generated.conf")
 
+    if opts.adxl_serial_device and not opts.numpy:
+        msgs.append(
+            "WARNING: 'adxl_serial_device' is set but the option 'numpy' is off. "
+            "ACCELEROMETER_QUERY works; SHAPER_CALIBRATE and TEST_RESONANCES "
+            "need 'numpy' on."
+        )
     if not has_include(paths.config / "printer.cfg", KLIPPER_INCLUDE):
         msgs.append(
             f"WARNING: printer.cfg does not contain '{KLIPPER_INCLUDE}'. "

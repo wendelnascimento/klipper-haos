@@ -30,5 +30,19 @@ configuration:
       Run the bundled Spoolman so Moonraker tracks how much filament is left
       on each spool. Open its web UI from Mainsail's Spoolman panel; it is
       only reachable through Home Assistant. Uses up to about 90 MB more memory.
+  numpy:
+    name: numpy (accelerometer input shaper calibration)
+    description: >-
+      Let Klipper use numpy, which SHAPER_CALIBRATE and TEST_RESONANCES need.
+      Klipper loads it only when a resonance test runs (about 22 MB more
+      memory from then until Klipper restarts). Leave off if you do not use
+      an accelerometer.
+  adxl_serial_device:
+    name: Accelerometer serial device
+    description: >-
+      Serial port of a USB accelerometer board running Klipper (for example
+      an RP2040 ADXL345 board), added as [mcu adxl]. Use its
+      /dev/serial/by-id/usb-Klipper_rp2040_... entry. Clear it when the board
+      is unplugged: Klipper waits for every configured MCU at start-up.
 network:
   7125/tcp: Mainsail and Moonraker API for slicers and external clients

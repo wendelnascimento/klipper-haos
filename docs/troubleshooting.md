@@ -23,6 +23,7 @@ in Mainsail (*Machine* → log files) or find it in
 | `mcu 'mcu': Unable to connect` | The printer is off, the cable is unplugged or charge-only, the wrong device is selected, or the board is not running Klipper firmware. See [printer-setup.md §6](printer-setup.md#6-confirm-mcu-communication). |
 | `MCU Protocol error` / version mismatch | The MCU firmware was built from a different Klipper version. Reflash the firmware from the matching app release. |
 | `Unable to read tmc uart 'stepper_x' register IFCNT` | Your driver chips don't answer as TMC2208. See [printer-setup.md → Stepper drivers](printer-setup.md#stepper-drivers). |
+| `mcu 'adxl': Unable to connect`, ``Failed to import `numpy` module``, `Option 'serial' in section 'mcu adxl' must be specified` | Accelerometer setup. See [input-shaper-calibration.md → Troubleshooting](input-shaper-calibration.md#troubleshooting). |
 | `START_PRINT blocked: hardware validation not completed` | Intentional. Complete the [checklist](hardware-validation.md), then run `MARK_HARDWARE_VALIDATED CONFIRM=YES`. |
 | `Timer too close` / `Lost communication with MCU` during prints | The host was too busy or the USB link dropped. Check host load (backups, other apps), use a different USB port or cable, and avoid USB hubs. |
 | `Heater extruder not heating at expected rate` | Thermal protection triggered. **Do not loosen `verify_heater`.** Check the heater cartridge, thermistor and wiring, then run PID calibration. |

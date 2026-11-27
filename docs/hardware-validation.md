@@ -32,7 +32,9 @@ Additional checks recommended before unattended use:
   goes back in without grinding, and new filament flows from the nozzle.
   Then a test print with one `M600` colour change that you resume.
 * `SCREWS_TILT_CALCULATE` for bed levelling.
-* Input shaper tuning (ringing tower) before raising speed limits.
+* Input shaper tuning before raising speed limits: a ringing tower, or
+  `SHAPER_CALIBRATE` with an accelerometer
+  ([input-shaper-calibration.md](input-shaper-calibration.md)).
 * Restart Home Assistant while the printer is idle and confirm Klipper
   reconnects by itself.
 

@@ -22,7 +22,8 @@ klipper-haos/
 │   ├── translations/en.yaml     option labels in the HA UI
 │   ├── DOCS.md / README.md / CHANGELOG.md / icon.png / logo.png
 ├── firmware/<printer>/klipper.config   MCU firmware Kconfig fragments
-│                  (ender3-v3-se-display adds the display serial bridge)
+│                  (ender3-v3-se-display adds the display serial bridge;
+│                   fly-adxl345-usb is the RP2040 USB accelerometer)
 ├── firmware/overlays/            build patches for firmware variants
 ├── tests/
 │   ├── static/      ShellCheck, Hadolint, yamllint, s6 tree, secrets
@@ -103,6 +104,13 @@ Upstream projects release independently. Never auto-update them.
    dependencies come from the archive's own `requirements.txt`. A Mainsail
    bump must still apply `klipper/mainsail/patches/*.patch`; the build fails
    if it does not.
+8. numpy (`klipper/requirements/numpy.txt`) is pinned by version and wheel
+   hash, not by `update-locks.sh`. To bump it, `pip download
+   --only-binary=:all: --no-deps numpy==X` in `python:<base Python>-alpine`,
+   then `pip hash` the musllinux wheel. Check that the Klipper commit still
+   works with it: the integration tests load Klipper's shaper calibration,
+   and `docs/input-shaper-calibration.md` says how the memory figures were
+   measured.
 
 Base images and GitHub Actions are proposed by Dependabot. These also need
 a full test run before merging.

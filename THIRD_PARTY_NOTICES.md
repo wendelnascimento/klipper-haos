@@ -15,6 +15,7 @@ own license; the MIT license does not replace or override any of them.
 | Ender 3 V3 SE display modules (`e3v3se_display`, `TJC3224`, `printerInterface`, `serial_bridge` in `klippy/extras`) | commit `d74d36bb69bd` of the fork, files listed with SHA-256 in `klipper/requirements/e3v3se-display.lock`, plus `klipper/e3v3se-display/patches/*.patch` | GPL-3.0 | https://github.com/jpcurti/ender3-v3-se-klipper-with-display |
 | mainsail-config (client macros) | `v1.2.1` (commit `e57810d51b5c`) | GPL-3.0 | https://github.com/mainsail-crew/mainsail-config |
 | Spoolman (optional, off by default; release archive with its built web client) | `v0.27.1` (archive SHA-256 in `klipper/Dockerfile`) | MIT | https://github.com/Donkie/Spoolman |
+| numpy (for accelerometer input shaper calibration; on Klipper's path only with the option `numpy`) | `2.5.5`, musllinux wheel pinned by SHA-256 in `klipper/requirements/numpy.txt` | BSD-3-Clause AND 0BSD AND MIT AND Zlib AND CC0-1.0; the bundled OpenBLAS is BSD-3-Clause, and the bundled GCC runtime libraries (`libgfortran` inside OpenBLAS, `libgcc_s`, `libstdc++`) are GPL-3.0-or-later WITH GCC-exception-3.1. Full texts: `/opt/numpy/numpy-2.5.5.dist-info/licenses/` in the image | https://github.com/numpy/numpy |
 | Home Assistant base image (Alpine, s6-overlay, bashio, tempio) | `base-python:3.13-alpine3.23` (digest pinned in the Dockerfile) | Apache-2.0 (image tooling), plus the licenses of the Alpine packages it contains | https://github.com/home-assistant/docker-base |
 | nginx | Alpine package (1.28.x) | BSD-2-Clause | https://nginx.org |
 | Python packages | exact versions in `klipper/requirements/*.txt`, `klipper/requirements/moonraker-overrides.txt` and Spoolman's own `requirements.txt` | various (MIT, BSD, Apache-2.0, MPL-2.0, LGPL, ...) | PyPI |
@@ -70,7 +71,8 @@ describe compatibility.
 
 ## Firmware binaries
 
-Firmware files attached to GitHub releases (`*-klipper.bin`) are compiled
+Firmware files attached to GitHub releases (`*-klipper.bin`, and
+`fly-adxl345-usb-*-klipper.uf2` for the RP2040 USB accelerometer) are compiled
 from the Klipper source at the commit listed above (GPL-3.0) using
 `tools/build-firmware.sh` and the configuration in `firmware/`. The source
 for every binary is that Klipper commit plus the configuration file.

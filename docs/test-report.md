@@ -3,6 +3,46 @@
 This report lists **only tests that were actually executed**, with their
 real results. Anything not listed here has not been tested.
 
+## Accelerometer input shaper calibration (unreleased) — 2026-11-27
+
+Local, on the maintainer's Windows PC with Docker Desktop. No printer and
+no accelerometer board were connected.
+
+* `tools/verify-all.sh`: every layer passed: image build, static checks,
+  unit tests, three firmware builds (including `fly-adxl345-usb`, which
+  produces `klipper.uf2`), three profile validations, and the integration
+  tests (78/78, on top of 0.2.2).
+* Profile validation with `adxl.cfg`: Klipper batch mode loads the profile
+  with `[mcu adxl]` against the compiled RP2040 data dictionary, and every
+  existing profile case still passes. Checked by hand that this test really
+  catches errors: a wrong pin (`adxl:gpio99`) and an STM32 dictionary for
+  `adxl` are both refused (*Pin ... is not a valid pin name on mcu
+  'adxl'*). Without `adxl_serial_device`, Klipper names the missing
+  `serial` option in `mcu adxl`.
+* New integration checks:
+  * By default numpy is not on Klipper's path, and Klipper's own
+    `ShaperCalibrate` reports numpy as missing. `adxl.cfg` is installed but
+    not included, and there is no `[mcu adxl]`.
+  * With `numpy` on and `adxl_serial_device` set: the running klippy
+    process has `PYTHONPATH=/opt/numpy`, and `ShaperCalibrate` loads numpy
+    with it. `generated.cfg` has `[mcu adxl]` on the selected path, and the
+    log warns that the device is not present.
+* numpy cost:
+  * Compressed image 130.4 → 146.7 MB; `/opt/numpy` 51 MB.
+  * Idle memory of the whole app, `numpy` off / on: 56.2 / 56.5 MiB and
+    55.8 / 56.3 MiB in two runs. Klipper does not import numpy until a
+    resonance test runs.
+  * `import numpy` with Klipper's calibration module: +22 MiB RSS.
+  * Klipper's `calc_freq_response` + `find_best_shaper` on a synthetic
+    416,000-sample X sweep (5–135 Hz at 1 Hz/s, 3200 Hz): peak 168 MiB RSS
+    in one process, about 1 s. It found the synthetic 55 Hz resonance as
+    mzv 55.6 Hz, which also shows that numpy 2.5.5 works with the pinned
+    Klipper commit.
+
+Not tested yet: the FLY ADXL345 USB board itself (flashing,
+`ACCELEROMETER_QUERY`, `SHAPER_CALIBRATE` on the printer), and plugging the
+board in while the app runs on Home Assistant OS.
+
 ## v0.2.1 filament macros with Spoolman on real Home Assistant OS — 2026-11-25
 
 Environment: the target host (HAOS 18.2), option `spoolman` on, the

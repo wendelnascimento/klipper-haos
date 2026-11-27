@@ -76,6 +76,25 @@ Runs the bundled [Spoolman](https://github.com/Donkie/Spoolman) filament
 inventory and connects Moonraker to it. Off by default. See
 [Filament tracking (Spoolman)](#filament-tracking-spoolman).
 
+### `numpy`
+
+Lets Klipper use numpy, which `SHAPER_CALIBRATE` and `TEST_RESONANCES`
+need for accelerometer input shaper calibration. Off by default. numpy is
+always in the image; this option only puts it on Klipper's import path.
+Klipper loads it when a resonance test runs. From then until Klipper
+restarts, Klipper uses about 22 MB more memory, and the calculation briefly
+needs up to about 170 MB. Nothing changes while idle or printing.
+
+### `adxl_serial_device`
+
+The serial port of a USB accelerometer board that runs Klipper firmware,
+such as an RP2040 ADXL345 board. The app adds it as a second MCU,
+`[mcu adxl]`, in `klipper-haos/generated.cfg`. Pick its
+`/dev/serial/by-id/usb-Klipper_rp2040_...` entry. It must not be the
+printer's `serial_device`. Klipper waits for every configured MCU at
+start-up, so **clear this option when the board is unplugged**. See
+[Accelerometer input shaper calibration](#accelerometer-input-shaper-calibration).
+
 ## Filament tracking (Spoolman)
 
 With the `spoolman` option on (restart the app after changing it),
@@ -194,6 +213,30 @@ firmware variant from the project's GitHub release and display firmware
 ```ini
 [include profiles/ender3-v3-se/display.cfg]
 ```
+
+### Accelerometer input shaper calibration
+
+`SHAPER_CALIBRATE` with an ADXL345 measures each axis's resonance and
+saves the best input shaper with `SAVE_CONFIG`. The Home Assistant host has
+no SPI pins, so the sensor needs a USB board with its own Klipper MCU. The
+Ender 3 V3 SE profile has `adxl.cfg` for the Mellow FLY ADXL345 USB
+(RP2040). In short:
+
+1. Flash the board with the `fly-adxl345-usb` firmware from the matching
+   GitHub release. On a PC: hold BOOT, plug in, then copy `klipper.uf2` to
+   the `RPI-RP2` drive.
+2. Plug it into the Home Assistant host. Turn on `numpy`, set
+   `adxl_serial_device`, and restart the app.
+3. Add `[include profiles/ender3-v3-se/adxl.cfg]` below the profile
+   include.
+4. `ACCELEROMETER_QUERY`, then `SHAPER_CALIBRATE AXIS=X` (board on the
+   toolhead) and `SHAPER_CALIBRATE AXIS=Y` (board on the bed), each
+   followed by `SAVE_CONFIG`.
+5. Remove the include and clear `adxl_serial_device` before you unplug
+   the board.
+
+The full guide is `docs/input-shaper-calibration.md` in the project
+repository.
 
 With the normal firmware, Klipper stops with
 `Unknown command: serial_bridge_send` while that line is present. Read the

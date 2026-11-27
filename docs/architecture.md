@@ -132,6 +132,11 @@ The serial device is chosen with a `device(subsystem=tty)` option, which
 gives a device picker in the Home Assistant UI. The app never hardcodes a
 device path.
 
+An optional second MCU, a USB accelerometer board (`adxl_serial_device`,
+same picker), uses the same `uart: true` access; nothing else is mapped.
+The app writes it as `[mcu adxl]` into `generated.cfg` and refuses the
+printer's own path for it.
+
 ## Build
 
 `klipper/Dockerfile` has three stages:
@@ -179,6 +184,14 @@ been measured on the target Celeron yet. Klipper's CPU use while printing
 depends on the printer and move complexity. Numbers from the target
 hardware will be added to the test report.
 
-Not included, to save resources: numpy (only needed for accelerometer
-input-shaper calibration), webcam streaming, timelapse, and Moonraker's
-update manager.
+numpy (for accelerometer input shaper calibration) is in the image, in
+`/opt/numpy` outside the Klippy virtual environment: +16 MB download,
++51 MB on disk. Klipper only gets it on its import path (`PYTHONPATH`, set
+by the klipper run script) with the option `numpy` on. Even then, Klipper
+imports it only when `SHAPER_CALIBRATE` or `TEST_RESONANCES` runs: about
+22 MiB more in Klipper's process from then on, plus a worker process of up
+to about 170 MiB for about a second per axis. Measurements are in
+[input-shaper-calibration.md](input-shaper-calibration.md#what-it-costs).
+
+Not included, to save resources: webcam streaming, timelapse, and
+Moonraker's update manager.

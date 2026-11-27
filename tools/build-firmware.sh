@@ -74,9 +74,10 @@ docker run --rm \
             ca-certificates > /dev/null
         sed -i "s#http://deb.debian.org#https://deb.debian.org#g" \
             /etc/apt/sources.list.d/debian.sources
+        # g++ builds the elf2uf2 host tool for RP2040 (accelerometer) firmware.
         apt-get update -qq
         DEBIAN_FRONTEND=noninteractive apt-get install -y -qq --no-install-recommends \
-            binutils ca-certificates cpp git make python3 gcc-arm-none-eabi binutils-arm-none-eabi \
+            binutils ca-certificates cpp g++ git make python3 gcc-arm-none-eabi binutils-arm-none-eabi \
             libnewlib-arm-none-eabi > /dev/null
         git clone -q --filter=blob:none https://github.com/Klipper3d/klipper.git /klipper
         cd /klipper
@@ -102,12 +103,21 @@ docker run --rm \
             esac
         done < /in/klipper.config
         make -j"$(nproc)" > /dev/null
-        cp out/klipper.bin out/klipper.dict .config /out/
+        # STM32 boards flash klipper.bin; RP2040 boards without a bootloader
+        # (USB accelerometers, Pico) get klipper.uf2 instead.
+        images=""
+        for f in klipper.bin klipper.uf2; do
+            [ -f "out/${f}" ] && images="${images} ${f}"
+        done
+        [ -n "${images}" ] || { echo "No firmware image in out/" >&2; exit 1; }
+        rm -f /out/klipper.bin /out/klipper.uf2 /out/*.sha256
+        for f in ${images}; do cp "out/${f}" /out/; done
+        cp out/klipper.dict .config /out/
         mv /out/.config /out/klipper.config.full
         git describe --tags --always --long > /out/klipper-version.txt
-        cd /out && sha256sum klipper.bin > klipper.bin.sha256
+        cd /out && for f in ${images}; do sha256sum "${f}" > "${f}.sha256"; done
         chown -R "$(stat -c %u:%g /out)" /out
     '
 echo "Firmware written to ${OUT}:"
 ls -l "${OUT}"
-cat "${OUT}/klipper.bin.sha256"
+cat "${OUT}"/*.sha256

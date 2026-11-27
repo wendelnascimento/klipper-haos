@@ -17,6 +17,16 @@ fi
 
 rm -f "${KHAOS_RUN_DIR}/klippy.sock"
 
+# Accelerometer input shaper calibration needs numpy. It is in the image but
+# only on Klipper's import path with the app option on; Klipper imports it
+# when SHAPER_CALIBRATE or TEST_RESONANCES runs, not at start-up.
+if [[ "$(khaos::option numpy false)" == "true" ]]; then
+    export PYTHONPATH="${KHAOS_NUMPY_DIR}"
+    bashio::log.info "numpy is available to Klipper (app option 'numpy')"
+else
+    unset PYTHONPATH
+fi
+
 bashio::log.info "Starting Klipper (log: ${KHAOS_LOG_DIR}/klippy.log)"
 exec "${KLIPPY_PYTHON}" /opt/klipper/klippy/klippy.py \
     "${KHAOS_CONFIG_DIR}/printer.cfg" \

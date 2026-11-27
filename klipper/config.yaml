@@ -61,6 +61,7 @@ options:
   cors_domains: []
   export_api_key: false
   spoolman: false
+  numpy: false
 schema:
   serial_device: "device(subsystem=tty)?"
   log_level: list(debug|info|warning|error)
@@ -70,3 +71,7 @@ schema:
     - "match(^https?://[A-Za-z0-9*.-]+(:[0-9]{1,5})?$)"
   export_api_key: bool
   spoolman: bool
+  numpy: bool
+  # Optional second Klipper MCU: a USB accelerometer board ([mcu adxl]).
+  # Covered by 'uart: true' like the printer; nothing else is mapped.
+  adxl_serial_device: "device(subsystem=tty)?"

@@ -220,6 +220,65 @@ def test_klipper_generated_with_and_without_serial(paths):
 
 
 # --------------------------------------------------------------------------
+# Accelerometer: numpy and the second MCU
+# --------------------------------------------------------------------------
+
+ADXL = "/dev/serial/by-id/usb-Klipper_rp2040_E6625C05E7473A2A-if00"
+PRINTER = "/dev/serial/by-id/usb-1a86_USB_Serial-if00-port0"
+
+
+def test_accelerometer_options_off_by_default():
+    opts = kc.parse_options({})
+    assert opts.numpy is False
+    assert opts.adxl_serial_device is None
+
+
+def test_adxl_serial_device_accepted_next_to_printer():
+    opts = kc.parse_options({"serial_device": PRINTER, "adxl_serial_device": ADXL, "numpy": True})
+    assert opts.adxl_serial_device == ADXL
+    assert opts.serial_device == PRINTER
+    assert opts.numpy is True
+
+
+@pytest.mark.parametrize(
+    "value", ["ttyACM0", f"{ADXL}\n[gcode_macro EVIL]", "/dev/../etc/shadow", 5]
+)
+def test_adxl_serial_device_rejects_invalid_and_names_the_option(value):
+    with pytest.raises(kc.OptionsError, match="adxl_serial_device"):
+        kc.parse_options({"adxl_serial_device": value})
+
+
+def test_adxl_serial_device_must_not_be_the_printer():
+    with pytest.raises(kc.OptionsError, match="not the printer's serial_device"):
+        kc.parse_options({"serial_device": PRINTER, "adxl_serial_device": PRINTER})
+
+
+def test_klipper_generated_adds_mcu_adxl_only_when_set(paths):
+    without = kc.render_klipper_generated(kc.parse_options({"numpy": True}), paths)
+    assert "[mcu adxl]" not in without
+    text = kc.render_klipper_generated(
+        kc.parse_options({"serial_device": PRINTER, "adxl_serial_device": ADXL}), paths
+    )
+    section = text.split("[mcu adxl]\n")[1].split("\n\n")[0]
+    assert section.splitlines()[-1] == f"serial: {ADXL}"
+    # The printer MCU keeps its own port.
+    assert text.split("[mcu]\n")[1].split("\n\n")[0].endswith(f"serial: {PRINTER}")
+
+
+def test_generate_warns_when_adxl_set_without_numpy(paths):
+    msgs = kc.generate(kc.parse_options({"adxl_serial_device": ADXL}), paths)
+    assert any(m.startswith("WARNING") and "'numpy' is off" in m for m in msgs)
+    msgs = kc.generate(kc.parse_options({"adxl_serial_device": ADXL, "numpy": True}), paths)
+    assert not any(m.startswith("WARNING") for m in msgs)
+
+
+def test_generate_installs_adxl_cfg_without_including_it(paths):
+    kc.generate(kc.parse_options({}), paths)
+    assert (paths.config / "profiles" / "ender3-v3-se" / "adxl.cfg").is_file()
+    assert "adxl.cfg" not in (paths.config / "printer.cfg").read_text(encoding="utf-8")
+
+
+# --------------------------------------------------------------------------
 # generate(): seeding and idempotency
 # --------------------------------------------------------------------------
 
@@ -282,8 +341,15 @@ def test_manifest_schema_matches_generator_options():
     schema_keys = set(manifest["schema"])
     assert schema_keys == {
         "serial_device", "log_level", "trusted_networks", "cors_domains", "export_api_key",
-        "spoolman",
+        "spoolman", "numpy", "adxl_serial_device",
     }
+    # Both serial ports use the Supervisor's device picker; the accelerometer
+    # options are off unless the user turns them on.
+    assert manifest["schema"]["adxl_serial_device"] == manifest["schema"]["serial_device"]
+    assert manifest["schema"]["numpy"] == "bool"
+    assert manifest["options"]["numpy"] is False
+    assert "adxl_serial_device" not in manifest["options"]
+    assert manifest.get("usb", False) is False
     # Every option with a default must also be in the schema.
     assert set(manifest["options"]) <= schema_keys
     translations = yaml.safe_load(

@@ -42,6 +42,9 @@ configured yet.*
 * Optional bundled **Spoolman** filament inventory: Moonraker subtracts
   each print's filament from the active spool. Its UI is available through
   Home Assistant only.
+* Optional **accelerometer input shaper calibration** (`SHAPER_CALIBRATE`)
+  with a USB ADXL345 board as a second MCU
+  ([docs/input-shaper-calibration.md](docs/input-shaper-calibration.md)).
 * Reproducible **MCU firmware builds** that match the bundled Klipper
   version exactly. Firmware is never flashed automatically.
 * Pinned and verified upstream versions. Releases are published to GHCR
@@ -67,6 +70,7 @@ configured yet.*
 | Slicer upload over the direct port; `trusted_networks` | **Tested** (OrcaSlicer 2.5.0 on the LAN) |
 | aarch64 (Raspberry Pi, ODROID, Green, Yellow) | **Planned** |
 | Original Ender 3 V3 SE display (firmware variant + `display.cfg`) | **Experimental**: works on one printer (reported); not every checklist step done |
+| Accelerometer input shaper calibration (`numpy`, USB ADXL345 as `[mcu adxl]`) | **Tested** in containers and Klipper batch mode; **not yet** on a printer |
 | Pressure-sensor Z-offset, camera, timelapse | **Planned / not supported** |
 
 ## Requirements

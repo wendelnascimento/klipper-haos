@@ -11,6 +11,9 @@ export KHAOS_LIB_DIR="/usr/local/lib/klipper-haos"
 export KLIPPY_PYTHON="/opt/venv/klippy/bin/python"
 export MOONRAKER_PYTHON="/opt/venv/moonraker/bin/python"
 export SPOOLMAN_VENV="/opt/venv/spoolman"
+# numpy for SHAPER_CALIBRATE / TEST_RESONANCES, outside the Klippy venv. Only
+# on Klipper's import path with the app option 'numpy' (klipper run script).
+export KHAOS_NUMPY_DIR="/opt/numpy"
 # Spoolman's SQLite database and its nightly backups (inside /data, so they
 # are part of the app's Home Assistant backups).
 export KHAOS_SPOOLMAN_DIR="${KHAOS_SPOOLMAN_DIR:-/data/spoolman}"

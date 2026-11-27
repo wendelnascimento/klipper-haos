@@ -52,5 +52,9 @@ are checked only when they are done **and** verified as described.
   support becomes available
 * Original display: validate on hardware (experimental support exists,
   see display.md); a custom screen layout on top of it
-* Optional numpy for accelerometer-based input shaper calibration
+* Optional numpy for accelerometer-based input shaper calibration:
+  implemented (options `numpy` and `adxl_serial_device`, profile
+  `adxl.cfg` for a USB RP2040 ADXL345 board, see
+  [input-shaper-calibration.md](input-shaper-calibration.md)); tested in
+  containers and Klipper batch mode, not yet on the printer
 * Webcam support (resource impact must be measured first)

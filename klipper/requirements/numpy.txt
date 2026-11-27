@@ -1,0 +1,7 @@
+# numpy for Klipper's accelerometer input shaper calibration
+# (TEST_RESONANCES, SHAPER_CALIBRATE). Installed into /opt/numpy, outside the
+# Klippy virtual environment; Klipper only sees it when the app option
+# 'numpy' is on (see the klipper s6 run script).
+# Pinned by hash: the amd64 musllinux wheel for the base image's Python 3.13.
+# Bump by hand (pip download --only-binary=:all: numpy==X, then pip hash).
+numpy==2.5.5 --hash=sha256:3cedc2980b45794a6a2cfee9c8c3a80f04517082cc1d387e4cc895506c481696

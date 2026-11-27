@@ -50,6 +50,20 @@ else
     bashio::log.notice "No printer serial device selected yet (app option 'serial_device')."
 fi
 
+adxl="$(khaos::option adxl_serial_device)"
+if [[ -n "${adxl}" ]]; then
+    if [[ -c "${adxl}" ]]; then
+        bashio::log.info "Accelerometer serial device: ${adxl} -> $(readlink -f "${adxl}")"
+        if [[ -n "${serial}" && "$(readlink -f "${adxl}")" == "$(readlink -f "${serial}")" ]]; then
+            bashio::log.warning "adxl_serial_device and serial_device are the same device."
+            bashio::log.warning "Select the accelerometer board's own /dev/serial/by-id entry."
+        fi
+    else
+        bashio::log.warning "Accelerometer serial device ${adxl} is not present."
+        bashio::log.warning "Klipper waits for it at start-up. Plug the board in, or clear the option 'adxl_serial_device'."
+    fi
+fi
+
 if [[ -d /dev/serial/by-id ]]; then
     bashio::log.info "Serial devices visible to the app (by-id):"
     for dev in /dev/serial/by-id/*; do

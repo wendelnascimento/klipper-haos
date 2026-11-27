@@ -53,9 +53,9 @@ cleanup() {
 }
 trap cleanup EXIT
 
-write_options() {
+write_options() { # write_options [trusted_networks] [export_api_key] [spoolman] [extra JSON members]
     cat > "${WORK}/data/options.json" <<EOF
-{"log_level": "info", "trusted_networks": ${1:-[]}, "cors_domains": [], "export_api_key": ${2:-true}, "spoolman": ${3:-false}}
+{"log_level": "info", "trusted_networks": ${1:-[]}, "cors_domains": [], "export_api_key": ${2:-true}, "spoolman": ${3:-false}${4:+, $4}}
 EOF
 }
 
@@ -76,6 +76,28 @@ wait_for() { # wait_for <seconds> <command...>
         sleep 1
     done
     return 1
+}
+
+# Environment of the running klippy process. The pattern is anchored, so it
+# matches klippy itself and not the shell whose command line contains it.
+klippy_env() {
+    # shellcheck disable=SC2016 # expanded by the shell inside the container
+    docker exec "${APP}" sh -c \
+        'tr "\000" "\n" < "/proc/$(pgrep -f "^/opt/venv/klippy/bin/python /opt/klipper/klippy/klippy.py" | head -1)/environ"'
+}
+klippy_has_numpy_path() { klippy_env | grep -qx 'PYTHONPATH=/opt/numpy'; }
+klippy_has_no_pythonpath() { local env; env="$(klippy_env)" && ! grep -q '^PYTHONPATH=' <<< "${env}"; }
+# Klipper's own shaper calibration code, run with the given PYTHONPATH.
+shaper_loads_numpy() { # shaper_loads_numpy <PYTHONPATH value>
+    docker exec "${APP}" env PYTHONPATH="$1" /opt/venv/klippy/bin/python -c \
+        'import sys; sys.path.insert(0, "/opt/klipper/klippy"); from extras import shaper_calibrate; shaper_calibrate.ShaperCalibrate(None)'
+}
+shaper_reports_numpy_missing() {
+    local out
+    out="$(docker exec "${APP}" /opt/venv/klippy/bin/python -c \
+        'import sys; sys.path.insert(0, "/opt/klipper/klippy"); from extras import shaper_calibrate; shaper_calibrate.ShaperCalibrate(None)' 2>&1)" \
+        && return 1
+    grep -qF "Failed to import \`numpy\` module" <<< "${out}"
 }
 
 klippy_state() {
@@ -116,6 +138,10 @@ check "moonraker.conf was seeded" test -f "${WORK}/config/moonraker.conf"
 check "generated Klipper include exists" test -f "${WORK}/config/klipper-haos/generated.cfg"
 check "Ender 3 V3 SE profile was installed" test -f "${WORK}/config/profiles/ender3-v3-se/printer.cfg"
 check "optional display.cfg installed, not included by default" bash -c "test -f '${WORK}/config/profiles/ender3-v3-se/display.cfg' && ! grep -q 'display.cfg' '${WORK}/config/printer.cfg'"
+check "optional adxl.cfg installed, not included by default" bash -c "test -f '${WORK}/config/profiles/ender3-v3-se/adxl.cfg' && ! grep -q 'adxl.cfg' '${WORK}/config/printer.cfg'"
+check "numpy is not on Klipper's import path by default" klippy_has_no_pythonpath
+check "without numpy, Klipper's shaper calibration says numpy is missing" shaper_reports_numpy_missing
+check "no [mcu adxl] without the option 'adxl_serial_device'" bash -c "! grep -q 'mcu adxl' '${WORK}/config/klipper-haos/generated.cfg'"
 check "display modules bundled in Klipper" docker exec "${APP}" sh -c 'cd /opt/klipper/klippy/extras && test -f e3v3se_display.py && test -f TJC3224.py && test -f printerInterface.py && test -f serial_bridge.py'
 check "display survives klippy:notify_mcu_error (msg, details)" docker exec -i "${APP}" \
     /opt/venv/klippy/bin/python - < "${HERE}/check_display_mcu_error.py"
@@ -317,6 +343,23 @@ else
     fail "Spoolman crash-loop protection did not trigger"
 fi
 check "Moonraker and Mainsail stay available without Spoolman" curl -sf "${INGRESS}/server/info"
+
+echo "== Accelerometer options (numpy on, adxl_serial_device set)"
+ADXL_DEV=/dev/serial/by-id/usb-Klipper_rp2040_KHAOSTEST-if00
+docker rm -f "${APP}" > /dev/null
+write_options '[]' false false "\"numpy\": true, \"adxl_serial_device\": \"${ADXL_DEV}\""
+start_app
+check "app starts with the accelerometer options" wait_for 90 curl -sf "${INGRESS}/server/info"
+check "generated.cfg defines [mcu adxl] on the selected device" \
+    grep -qxF "serial: ${ADXL_DEV}" "${WORK}/config/klipper-haos/generated.cfg"
+check "log warns that the accelerometer device is not present" \
+    bash -c "docker logs ${APP} 2>&1 | grep -qF 'Accelerometer serial device ${ADXL_DEV} is not present'"
+check "log says numpy is available to Klipper" bash -c "docker logs ${APP} 2>&1 | grep -q 'numpy is available to Klipper'"
+check "Klipper runs with numpy on its import path" wait_for 60 klippy_has_numpy_path
+check "with that path, Klipper's shaper calibration loads numpy" shaper_loads_numpy /opt/numpy
+sleep 20
+echo "  INFO  idle memory/CPU with numpy on (Klipper imports it only for a resonance test):" \
+    "$(docker stats --no-stream --format '{{.MemUsage}} / CPU {{.CPUPerc}}' "${APP}")"
 
 echo "== Option validation"
 docker rm -f "${APP}" > /dev/null

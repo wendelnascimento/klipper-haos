@@ -265,6 +265,9 @@ case comment out the `[include drivers-tmc2208.cfg]` line in
   without it.
 * **Pressure sensor (strain gauge) automatic Z-offset:** not supported in
   v1.0 and needs a forked Klipper. Use the CR Touch and manual Z-offset.
+* **Accelerometer (input shaper calibration):** optional `adxl.cfg` for a
+  USB ADXL345 board with its own MCU. See
+  [input-shaper-calibration.md](input-shaper-calibration.md).
 * **Filament runout sensor:** not configured. Contributions are welcome
   once the pin is verified.
 
