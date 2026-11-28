@@ -6,6 +6,8 @@ All notable changes to this app are documented here. The format follows
 
 ## [Unreleased]
 
+## [0.2.3] - 2026-11-27
+
 ### Added
 
 - Accelerometer input shaper calibration (`SHAPER_CALIBRATE`,
